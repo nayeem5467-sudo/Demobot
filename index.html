@@ -602,12 +602,60 @@ async function fetchBalance() {
 }
 
 // ══════════════════════════════════════════════════════════════
+// HISTORICAL CANDLE PRELOAD  (Binance public REST — no CORS from GitHub Pages)
+// Loads 500 candles per symbol instantly so signals fire on startup
+// ══════════════════════════════════════════════════════════════
+async function preloadHistoricalCandles() {
+  log('📥 Loading historical candles from Binance…', 'info');
+  setBanner('warn', '⏳ Loading 500 candles per coin — signals ready in seconds…');
+
+  let loaded = 0;
+  for (const sym of SYMBOLS) {
+    try {
+      const url = `https://api.binance.com/api/v3/klines?symbol=${sym}&interval=5m&limit=500`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const raw = await res.json();
+      st.candles[sym] = raw.map(k => ({
+        open:  parseFloat(k[1]),
+        high:  parseFloat(k[2]),
+        low:   parseFloat(k[3]),
+        close: parseFloat(k[4]),
+        vol:   parseFloat(k[5]),
+        closed: true
+      }));
+      st.wsReady[sym] = true;
+      loaded++;
+      log(`✅ ${sym}: ${st.candles[sym].length} candles loaded`, 'ok');
+    } catch(e) {
+      log(`⚠️ ${sym} history failed: ${e.message}`, 'warn');
+    }
+    // Small delay to avoid rate limit
+    await new Promise(r => setTimeout(r, 100));
+  }
+
+  log(`🚀 Historical data ready! ${loaded}/${SYMBOLS.length} symbols loaded. Signals active!`, 'ok');
+  if (st.connected) {
+    setBanner('ok', '🟢 Connected to Binance Demo — historical data loaded, signals active!');
+  }
+
+  // Run scan immediately now that data is ready
+  runScan();
+  // Trigger bot loop immediately if running
+  if (st.running) botLoop();
+}
+
+// ══════════════════════════════════════════════════════════════
 // WEBSOCKET PRICE STREAMS (public — zero CORS issues ever)
 // ══════════════════════════════════════════════════════════════
 function startPriceStream() {
   const streams = SYMBOLS.map(s=>s.toLowerCase()+'@miniTicker').join('/');
   const ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
-  ws.onopen    = () => { log('📈 Live price stream connected', 'ok'); };
+  ws.onopen    = () => {
+    log('📈 Live price stream connected', 'ok');
+    // Preload historical candles once WS is up
+    preloadHistoricalCandles();
+  };
   ws.onmessage = e => {
     try {
       const d = JSON.parse(e.data).data;
@@ -623,7 +671,7 @@ function startPriceStream() {
   ws.onclose = ()=>{ setTimeout(startPriceStream, 5000); };
   st.ws = ws;
 
-  // Kline streams for signals
+  // Kline streams — keep updating candles in real time after preload
   SYMBOLS.forEach(sym => {
     const wk = new WebSocket(`wss://stream.binance.com:9443/ws/${sym.toLowerCase()}@kline_5m`);
     wk.onmessage = e => {
@@ -632,15 +680,22 @@ function startPriceStream() {
         if (!k) return;
         const c={open:parseFloat(k.o),high:parseFloat(k.h),low:parseFloat(k.l),close:parseFloat(k.c),vol:parseFloat(k.v),closed:k.x};
         if (!st.candles[sym]) st.candles[sym]=[];
-        if (c.closed) { st.candles[sym].push(c); if(st.candles[sym].length>100)st.candles[sym].shift(); st.wsReady[sym]=st.candles[sym].length>=20; }
-        else { const a=st.candles[sym]; if(a.length>0)a[a.length-1]=c; else a.push(c); }
+        if (c.closed) {
+          st.candles[sym].push(c);
+          if(st.candles[sym].length>500) st.candles[sym].shift();
+          st.wsReady[sym]=true;
+        } else {
+          // Update last candle in real time
+          const a=st.candles[sym];
+          if(a.length>0) a[a.length-1]=c; else a.push(c);
+        }
       } catch{}
     };
     wk.onerror=()=>{};
     wk.onclose=()=>{ setTimeout(()=>startKlineStream(sym),5000); };
     st.wsKlines[sym]=wk;
   });
-  log('📡 Kline streams opened for all symbols', 'info');
+  log('📡 Live kline streams opened for all symbols', 'info');
 }
 
 function startKlineStream(sym) {

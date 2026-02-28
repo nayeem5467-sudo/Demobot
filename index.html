@@ -1,0 +1,3021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Binance Demo Bot</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+:root{
+  --bg:#0a0a0f;--surface:#111118;--card:#16161f;--border:#222232;
+  --accent:#f0b90b;--green:#00e676;--red:#ff4d6d;--yellow:#ffd166;
+  --text:#d0d0e8;--dim:#555570;
+  --mono:'Space Mono',monospace;--sans:'Space Grotesk',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);display:flex;flex-direction:column;height:100dvh}
+
+/* ── HEADER ── */
+.hdr{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.logo{font-size:17px;font-weight:700;display:flex;align-items:center;gap:8px}
+.logo-icon{color:var(--accent);font-size:20px}
+.logo em{color:var(--accent);font-style:normal}
+.hdr-r{display:flex;align-items:center;gap:6px}
+.badge{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:1px;padding:3px 8px;border-radius:4px}
+.b-demo{background:rgba(240,185,11,.15);color:var(--accent);border:1px solid rgba(240,185,11,.35)}
+.b-run{background:rgba(0,230,118,.12);color:var(--green);border:1px solid rgba(0,230,118,.3);animation:blink 2s infinite}
+.b-off{background:rgba(85,85,112,.15);color:var(--dim);border:1px solid var(--border)}
+@keyframes blink{50%{opacity:.5}}
+
+/* ── TABS ── */
+.tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0}
+.tab{flex:1;padding:10px 2px;text-align:center;font-size:10px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--dim);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* ── SCROLL ── */
+.scroll{flex:1;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.scroll::-webkit-scrollbar{display:none}
+.page{display:none;padding:14px 14px 100px 14px}
+.page.active{
+  display:block;
+  position:absolute;top:0;left:0;right:0;bottom:0;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+
+/* ── BANNERS ── */
+.banner{display:flex;align-items:center;gap:8px;border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:12px;border:1px solid;transition:all .4s}
+.bn-ok{background:rgba(0,230,118,.07);border-color:rgba(0,230,118,.25);color:var(--green)}
+.bn-err{background:rgba(255,77,109,.07);border-color:rgba(255,77,109,.25);color:var(--red)}
+.bn-warn{background:rgba(240,185,11,.07);border-color:rgba(240,185,11,.25);color:var(--yellow)}
+.bn-info{background:rgba(124,111,255,.07);border-color:rgba(124,111,255,.25);color:#a0a0ff}
+.bn-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;background:currentColor}
+.bn-dot.pulse{animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── TICKER ── */
+.ticker-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:9px 14px;margin-bottom:12px;overflow:hidden}
+.ticker-inner{display:flex;gap:20px;width:max-content}
+.ticker-inner.go{animation:scrollT 35s linear infinite}
+@keyframes scrollT{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.ti{display:flex;align-items:center;gap:5px;white-space:nowrap}
+.ti-s{font-size:11px;font-weight:700}
+.ti-p{font-family:var(--mono);font-size:11px}
+.ti-c{font-family:var(--mono);font-size:10px}
+
+/* ── STAT GRID ── */
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.sb{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;position:relative;overflow:hidden}
+.sb::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%}
+.la::before{background:var(--accent)} .lg::before{background:var(--green)}
+.lr::before{background:var(--red)}    .ly::before{background:var(--yellow)}
+.sl{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--dim);margin-bottom:5px}
+.sv{font-family:var(--mono);font-size:18px;font-weight:700}
+.sv.g{color:var(--green)} .sv.r{color:var(--red)} .sv.a{color:var(--accent)} .sv.y{color:var(--yellow)}
+.ss{font-size:10px;color:var(--dim);margin-top:3px}
+
+/* ── CARD ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px}
+.chdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.ct{font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--dim)}
+.ca{font-size:11px;color:var(--accent);cursor:pointer;font-weight:600}
+
+/* ── PROGRESS ── */
+.pw{margin:8px 0}
+.pm{display:flex;justify-content:space-between;font-size:11px;color:var(--dim);margin-bottom:4px}
+.pb{height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.pf{height:100%;border-radius:3px;transition:width .6s}
+
+/* ── SELECT/DROPDOWN ── */
+.fs{background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;outline:none;-webkit-appearance:none;appearance:none;cursor:pointer}
+.fs option{background:var(--card);color:var(--text)}
+/* ── CHART ── */
+canvas.pnl{width:100%;height:80px}
+
+/* ── BUTTONS ── */
+.btn{width:100%;padding:13px;border:none;border-radius:10px;font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;transition:all .15s}
+.btn:active{transform:scale(.96)}
+.btn-y{background:var(--accent);color:#000}
+.btn-g{background:var(--green);color:#000}
+.btn-r{background:var(--red);color:#fff}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text)}
+.b2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+
+/* ── TRADE ROW ── */
+.tr{display:flex;align-items:flex-start;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);gap:8px}
+.tr:last-child{border-bottom:none}
+.tr-sym{font-size:14px;font-weight:700}
+.tr-meta{font-size:10px;color:var(--dim);margin-top:3px}
+.chip{display:inline-block;font-size:8px;font-weight:700;letter-spacing:.8px;padding:2px 5px;border-radius:3px;margin-right:3px}
+.c-long{background:rgba(0,230,118,.12);color:var(--green)}
+.c-short{background:rgba(255,77,109,.12);color:var(--red)}
+.c-open{background:rgba(240,185,11,.12);color:var(--accent)}
+.c-win{background:rgba(0,230,118,.12);color:var(--green)}
+.c-loss{background:rgba(255,77,109,.12);color:var(--red)}
+.tr-pnl{font-family:var(--mono);font-size:14px;font-weight:700}
+
+/* ── SCAN ROW ── */
+.srow{display:flex;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);gap:10px;cursor:pointer;width:100%;min-width:0}
+.srow:last-child{border-bottom:none}
+.srow:active{opacity:.7}
+.sico{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;font-weight:700}
+/* scan list: vertical block, each row full width flex */
+#scanList{display:block!important;width:100%}
+#scanList > div{display:flex!important;width:100%!important;box-sizing:border-box!important;float:none!important}
+
+/* ── FORM ── */
+.fr{margin-bottom:12px}
+.fl{font-size:10px;letter-spacing:.8px;text-transform:uppercase;color:var(--dim);margin-bottom:5px;display:block}
+.fi{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:11px 12px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;transition:border-color .2s}
+.fi:focus{border-color:var(--accent)}
+.fi.pw-field{letter-spacing:2px}
+.fs{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:11px 12px;color:var(--text);font-size:13px;outline:none;-webkit-appearance:none}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.eye-wrap{position:relative}
+.eye-wrap .fi{padding-right:44px}
+.eye-btn{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--dim);cursor:pointer;font-size:16px;padding:4px}
+
+/* ── TOGGLE ── */
+.trow{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
+.trow:last-child{border-bottom:none}
+.tn{font-size:13px;font-weight:500}
+.td{font-size:10px;color:var(--dim);margin-top:2px}
+.tog{width:42px;height:23px;background:var(--border);border-radius:12px;position:relative;cursor:pointer;transition:background .25s;flex-shrink:0}
+.tog.on{background:var(--accent)}
+.tog::after{content:'';position:absolute;width:17px;height:17px;border-radius:50%;background:#fff;top:3px;left:3px;transition:left .25s}
+.tog.on::after{left:22px}
+
+/* ── LOG ── */
+.logbox{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;height:240px;overflow-y:auto;font-family:var(--mono);font-size:10px;line-height:1.8}
+.logbox::-webkit-scrollbar{display:none}
+.ll.info{color:var(--text)} .ll.ok{color:var(--green)} .ll.warn{color:var(--yellow)} .ll.err{color:var(--red)}
+.ll .lt{color:var(--dim);margin-right:6px}
+
+/* ── MISC ── */
+.empty{text-align:center;color:var(--dim);font-size:12px;padding:24px 0}
+.ei{font-size:28px;margin-bottom:6px}
+.sec-lbl{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--dim);margin:14px 0 8px}
+.divider{height:1px;background:var(--border);margin:14px 0}
+.warn-box{background:rgba(255,77,109,.07);border:1px solid rgba(255,77,109,.25);border-radius:10px;padding:12px;font-size:12px;color:var(--red);line-height:1.6;margin-bottom:12px}
+.info-box{background:rgba(240,185,11,.07);border:1px solid rgba(240,185,11,.25);border-radius:10px;padding:12px;font-size:12px;color:var(--yellow);line-height:1.7;margin-bottom:12px}
+
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--border);border-radius:20px;padding:10px 18px;font-size:13px;font-weight:600;z-index:999;white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,.5);animation:tin .2s ease}
+@keyframes tin{from{transform:translateX(-50%) translateY(20px);opacity:0}}
+
+.sheet-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:500;align-items:flex-end}
+.sheet-ov.show{display:flex}
+.sheet{background:var(--card);border:1px solid var(--border);border-radius:20px 20px 0 0;padding:20px 16px 40px;width:100%;animation:sup .2s ease;max-height:90vh;overflow-y:auto}
+@keyframes sup{from{transform:translateY(100%)}}
+.sh-ttl{font-size:16px;font-weight:700;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
+.sh-x{color:var(--dim);cursor:pointer;font-size:22px;line-height:1}
+
+/* ── BALANCE BOX ── */
+.bal-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}
+.bal-box{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center}
+.bal-lbl{font-size:9px;letter-spacing:.8px;text-transform:uppercase;color:var(--dim);margin-bottom:4px}
+.bal-val{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--accent)}
+
+/* ── SETUP STEPS ── */
+.step{display:flex;gap:12px;margin-bottom:14px;align-items:flex-start}
+.step-num{width:26px;height:26px;border-radius:50%;background:rgba(240,185,11,.15);border:1px solid rgba(240,185,11,.35);color:var(--accent);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.step-text{font-size:12px;line-height:1.6;color:var(--text)}
+.step-text strong{color:var(--accent)}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="logo"><span class="logo-icon">◈</span>Demo<em>Bot</em></div>
+  <div class="hdr-r">
+    <div class="badge b-demo">DEMO</div>
+    <div class="badge b-off" id="botBadge">STOPPED</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="nav('dash')">📊 Dash</div>
+  <div class="tab" onclick="nav('scanner')">🔍 Scan</div>
+  <div class="tab" onclick="nav('trades')">📋 Trades</div>
+  <div class="tab" onclick="nav('config')">⚙️ Config</div>
+  <div class="tab" onclick="nav('setup')">🔑 Keys</div>
+</div>
+
+<div class="scroll">
+
+<!-- ════════ DASHBOARD ════════ -->
+<div class="page active" id="pg-dash">
+
+  <div class="banner bn-warn" id="connBanner">
+    <div class="bn-dot" id="connDot"></div>
+    <span id="connText">Enter API keys in the Keys tab to connect</span>
+  </div>
+
+  <!-- Ticker -->
+  <div class="ticker-wrap">
+    <div class="ticker-inner" id="tickerInner">
+      <span style="color:var(--dim);font-size:11px;font-family:var(--mono)">Waiting for live prices…</span>
+    </div>
+  </div>
+
+  <!-- Demo Account Balance (from API) -->
+  <div class="bal-grid">
+    <div class="bal-box"><div class="bal-lbl">Demo Balance</div><div class="bal-val" id="acctBal">—</div></div>
+    <div class="bal-box"><div class="bal-lbl">Unrealised PnL</div><div class="bal-val" id="acctUpnl" style="color:var(--green)">—</div></div>
+    <div class="bal-box"><div class="bal-lbl">Margin Used</div><div class="bal-val" id="acctMargin">—</div></div>
+  </div>
+
+  <!-- Stats -->
+  <div class="sg">
+    <div class="sb la"><div class="sl">Session Capital</div><div class="sv a" id="s-cap">$2000.00</div><div class="ss" id="cap-started">Started: $2000</div></div>
+    <div class="sb lg"><div class="sl">Session P&L</div><div class="sv g" id="s-pnl">+$0.00</div><div class="ss" id="s-pct">0.00%</div></div>
+    <div class="sb ly"><div class="sl">Trades</div><div class="sv y" id="s-trades">0/300</div><div class="ss" id="s-trades-sub">0 open</div></div>
+    <div class="sb lg"><div class="sl">Win Rate</div><div class="sv g" id="s-wr">—</div><div class="ss" id="s-wl">0W / 0L</div></div>
+    <div class="sb" style="border-left:3px solid var(--green)"><div class="sl">Take Profits</div><div class="sv g" id="s-tp">0</div><div class="ss" id="s-tp-sub">TP hits</div></div>
+    <div class="sb" style="border-left:3px solid var(--red)"><div class="sl">Stop Losses</div><div class="sv r" id="s-sl">0</div><div class="ss" id="s-sl-sub">SL hits</div></div>
+  </div>
+
+  <!-- Open PnL + Closed PnL -->
+  <div class="sg" style="margin-top:0">
+    <div class="sb" style="border-left:3px solid var(--accent)">
+      <div class="sl">📂 Open PnL</div>
+      <div class="sv" id="open-pnl" style="color:var(--dim)">—</div>
+      <div class="ss" id="open-pnl-sub">0 positions</div>
+    </div>
+    <div class="sb" style="border-left:3px solid var(--green)">
+      <div class="sl">✅ Closed PnL</div>
+      <div class="sv" id="closed-pnl" style="color:var(--dim)">—</div>
+      <div class="ss" id="closed-pnl-sub">0 trades</div>
+    </div>
+    <div class="sb" style="border-left:3px solid #7c6fff">
+      <div class="sl">💰 Total PnL</div>
+      <div class="sv" id="total-pnl-card" style="color:var(--dim)">—</div>
+      <div class="ss" id="total-pnl-sub">open + closed</div>
+    </div>
+  </div>
+
+  <!-- P&L Chart -->
+  <div class="card">
+    <div class="chdr"><div class="ct">P&L Curve</div><div class="ca" onclick="resetSession()">Reset</div></div>
+    <canvas class="pnl" id="pnlChart"></canvas>
+  </div>
+
+  <!-- Progress -->
+  <div class="card">
+    <div class="ct" style="margin-bottom:10px">Daily Goals</div>
+    <div class="pw"><div class="pm"><span>Profit Target ($200)</span><span id="p1t">$0</span></div><div class="pb"><div class="pf" id="p1" style="width:0%;background:var(--green)"></div></div></div>
+    <div class="pw"><div class="pm"><span id="p2-label">Trades</span><span id="p2t">0/300</span></div><div class="pb"><div class="pf" id="p2" style="width:0%;background:var(--accent)"></div></div></div>
+    <div class="pw"><div class="pm"><span>Loss Guard ($100 max)</span><span id="p3t">$0</span></div><div class="pb"><div class="pf" id="p3" style="width:0%;background:var(--red)"></div></div></div>
+  </div>
+
+  <!-- Open Positions -->
+  <div class="card">
+    <div class="chdr"><div class="ct">Open Positions</div><div style="display:flex;gap:8px;align-items:center"><span class="ca" style="color:var(--accent);font-size:11px" onclick="syncAndRefresh()">⟳ Sync</span><span class="ca" style="color:var(--red);font-size:11px" onclick="closeAllPositions()">✕ Close All</span><span class="ca" id="posCount">0 open</span></div></div>
+    <div id="openPos"><div class="empty"><div class="ei">📭</div>No open positions</div></div>
+  </div>
+
+  <button class="btn btn-y" id="mainBtn" onclick="toggleBot()">▶ START DEMO BOT</button>
+
+  <!-- BOT LOG -->
+  <div style="margin-top:16px;padding-bottom:20px">
+    <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--dim);margin-bottom:8px">📋 Bot Activity Log</div>
+    <div id="logBox" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;height:220px;overflow-y:auto;font-family:var(--mono);font-size:10px;line-height:1.9;-webkit-overflow-scrolling:touch;"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px">
+      <button class="btn btn-ghost" style="font-size:12px;padding:10px" onclick="document.getElementById('logBox').innerHTML=''">🗑 Clear</button>
+      <button class="btn btn-ghost" style="font-size:12px;padding:10px" onclick="copyLog()">📋 Copy Log</button>
+      <button class="btn btn-ghost" style="font-size:12px;padding:10px" onclick="forceScan()">▶ Force Scan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ SCANNER ════════ -->
+<div class="page" id="pg-scanner">
+
+  <!-- SEARCH & ANALYZE -->
+  <div class="card">
+    <div class="chdr"><div class="ct">🔍 Search & Analyze</div></div>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <input class="fi" id="searchInput" placeholder="Type coin: BTC, ETH, PEPE…" style="flex:1;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+      <button class="btn btn-y" style="width:auto;padding:0 16px;font-size:13px;white-space:nowrap" onclick="searchAndAnalyze()">Analyze</button>
+    </div>
+    <div id="searchResult" style="display:none">
+      <!-- filled by searchAndAnalyze() -->
+    </div>
+  </div>
+
+  <!-- QUICK FILTERS -->
+  <div class="card">
+    <div class="chdr"><div class="ct">📊 Market Scanner</div><div class="ca" onclick="runScan()">↻ Refresh</div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">
+      <button id="sf-all" class="btn btn-ghost" style="font-size:11px;padding:8px;border:1px solid var(--accent);color:var(--accent)" onclick="setScanMode('all')">📋 All</button>
+      <button id="sf-gainers" class="btn btn-ghost" style="font-size:11px;padding:8px" onclick="setScanMode('gainers')">🔥 Gainers</button>
+      <button id="sf-losers" class="btn btn-ghost" style="font-size:11px;padding:8px" onclick="setScanMode('losers')">📉 Losers</button>
+      <button id="sf-signals" class="btn btn-ghost" style="font-size:11px;padding:8px" onclick="setScanMode('signals')">⚡ Signals</button>
+    </div>
+    <div class="fr" style="margin-bottom:8px">
+      <input class="fi" id="symSearch" placeholder="Filter list (BTC, SOL…)" oninput="runScan()" style="font-size:12px">
+    </div>
+    <div id="scanList" style="width:100%;overflow:hidden"><div class="empty"><div class="ei">🔍</div>Loading symbols… connect API keys to scan</div></div>
+  </div>
+
+</div>
+
+<!-- ════════ TRADES ════════ -->
+<div class="page" id="pg-trades">
+
+  <!-- Summary row -->
+  <div class="sg">
+    <div class="sb la"><div class="sl">Total</div><div class="sv a" id="t-total">0</div><div class="ss">trades</div></div>
+    <div class="sb lg"><div class="sl">Realised P&L</div><div class="sv g" id="t-pnl">$0.00</div></div>
+    <div class="sb lg"><div class="sl">Best</div><div class="sv g" id="t-best">—</div></div>
+    <div class="sb lr"><div class="sl">Worst</div><div class="sv r" id="t-worst">—</div></div>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="card" style="padding:10px 14px">
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <select id="tf-status" class="fs" style="flex:1;font-size:12px" onchange="setTradeFilter(this.value)">
+        <option value="all">📋 All Trades</option>
+        <option value="open">⚡ Open Only</option>
+        <option value="closed">✅ Closed Only</option>
+        <option value="win">💰 Wins Only</option>
+        <option value="loss">🔴 Losses Only</option>
+        <option value="sl">⛔ Stop Loss Hits</option>
+        <option value="tp">🎯 TP Targets Hit</option>
+        <option value="manual">✕ Manual Closes</option>
+      </select>
+      <select id="tf-time" class="fs" style="flex:1;font-size:12px" onchange="renderTrades()">
+        <option value="all">📅 All Time</option>
+        <option value="today">Today</option>
+        <option value="yesterday">Yesterday</option>
+        <option value="7d">Last 7 Days</option>
+        <option value="30d">Last 30 Days</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-ghost" style="font-size:11px;padding:7px 12px;flex:1" onclick="refreshTradesFromBinance()">🔄 Sync</button>
+      <button class="btn btn-ghost" style="font-size:11px;padding:7px 12px;flex:1;color:var(--red)" onclick="clearHistory()">🗑 Clear Closed</button>
+      <button class="btn btn-ghost" style="font-size:11px;padding:7px 12px;flex:1;color:#ff0044;border-color:#ff0044;font-weight:700" onclick="resetEverything()">⚠️ Full Reset</button>
+    </div>
+  </div>
+
+  <!-- Trade journal list -->
+  <div id="tradeList" style="padding-bottom:80px"><div class="empty"><div class="ei">📋</div>No trades yet</div></div>
+
+</div>
+
+<!-- ════════ CONFIG ════════ -->
+<div class="page" id="pg-config">
+  <div class="card">
+    <div class="ct" style="margin-bottom:12px">Strategy</div>
+    <div class="fr"><label class="fl">Strategy</label>
+      <select class="fs" id="cfgStrat">
+        <option value="rsi">RSI Reversal (RSI &lt;30 / &gt;70)</option>
+        <option value="ema">EMA Crossover (9/21)</option>
+        <option value="vol">Volume Spike</option>
+        <option value="break">Breakout (20-bar H/L)</option>
+        <option value="macd">MACD Signal</option>
+        <option value="mixed">Mixed (rotates all)</option>
+      </select>
+    </div>
+    <div class="f2">
+      <div class="fr"><label class="fl">Trade Size ($)</label><input class="fi" id="cfgSize" type="number" value="100"></div>
+      <div class="fr"><label class="fl">Leverage</label><input class="fi" id="cfgLev" type="number" value="10" min="1" max="20"></div>
+    </div>
+    <div class="f2">
+      <div class="fr"><label class="fl">Take Profit ($)</label><input class="fi" id="cfgTP" type="number" value="25"></div>
+      <div class="fr"><label class="fl">Stop Loss ($)</label><input class="fi" id="cfgSL" type="number" value="18"></div>
+    </div>
+    <div class="f2">
+      <div class="fr"><label class="fl">Max Trades/Day</label><input class="fi" id="cfgMaxT" type="number" value="30"></div>
+      <div class="fr"><label class="fl">Max Open</label><input class="fi" id="cfgMaxP" type="number" value="5"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ct" style="margin-bottom:10px">Risk Controls</div>
+    <div class="trow"><div><div class="tn">Daily Loss Guard</div><div class="td">Stop if daily loss > $200</div></div><div class="tog on" id="tog-dlg" onclick="togSet('dlg')"></div></div>
+    <div class="trow"><div><div class="tn">Auto TP/SL Orders</div><div class="td">Place TP & SL on Binance Demo</div></div><div class="tog on" id="tog-tpsl" onclick="togSet('tpsl')"></div></div>
+    <div class="trow"><div><div class="tn">Auto-Trade Signals</div><div class="td">Bot places demo orders automatically</div></div><div class="tog on" id="tog-auto" onclick="togSet('auto')"></div></div>
+    <div class="trow"><div><div class="tn">Realistic Slippage</div><div class="td">Simulate 0.05% slippage</div></div><div class="tog on" id="tog-slip" onclick="togSet('slip')"></div></div>
+  </div>
+  <button class="btn btn-y" onclick="saveConfig()">Save Configuration</button>
+</div>
+
+<!-- ════════ SETUP / KEYS ════════ -->
+<div class="page" id="pg-setup">
+
+  <div class="info-box">
+    ⚠️ Keys are stored <strong>only in your browser</strong> on this device. They are never sent anywhere except directly to demo-fapi.binance.com.
+  </div>
+
+  <div class="card">
+    <div class="ct" style="margin-bottom:14px">🔑 Binance Demo API Keys</div>
+
+    <div class="fr">
+      <label class="fl">API Key</label>
+      <div class="eye-wrap">
+        <input class="fi pw-field" id="apiKey" type="password" placeholder="Paste your Demo API Key" autocomplete="off">
+        <button class="eye-btn" onclick="toggleEye('apiKey',this)">👁</button>
+      </div>
+    </div>
+    <div class="fr">
+      <label class="fl">Secret Key</label>
+      <div class="eye-wrap">
+        <input class="fi pw-field" id="apiSecret" type="password" placeholder="Paste your Demo Secret Key" autocomplete="off">
+        <button class="eye-btn" onclick="toggleEye('apiSecret',this)">👁</button>
+      </div>
+    </div>
+
+    <button class="btn btn-y" onclick="connectAPI()" id="connectBtn">Connect to Binance Demo</button>
+
+    <div id="connectResult" style="margin-top:12px;font-size:12px;text-align:center;color:var(--dim)"></div>
+  </div>
+
+  <div class="card">
+    <div class="ct" style="margin-bottom:12px">📋 How to get your Demo API Keys</div>
+    <div class="step"><div class="step-num">1</div><div class="step-text">Go to <strong>demo.binance.com</strong> on your phone</div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-text">Tap the menu → <strong>API Management</strong></div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-text">Tap <strong>Create API</strong> → System Generated → name it <strong>demobot</strong></div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-text">Enable <strong>Futures Trading</strong> permission only</div></div>
+    <div class="step"><div class="step-num">5</div><div class="step-text">Copy <strong>API Key</strong> and <strong>Secret Key</strong> — paste them above</div></div>
+
+    <div class="divider"></div>
+    <div class="warn-box">🔒 Never share your real Binance API keys with anyone. Demo keys only work on demo.binance.com — safe to use here.</div>
+  </div>
+
+  <div class="card">
+    <div class="ct" style="margin-bottom:10px">Connection Status</div>
+    <div id="apiStatus" style="font-family:var(--mono);font-size:11px;line-height:2;color:var(--dim)">Not connected yet.</div>
+  </div>
+</div>
+
+</div><!-- /scroll -->
+
+<!-- Sheet -->
+<div class="sheet-ov" id="sheet">
+  <div class="sheet">
+    <div class="sh-ttl"><span id="sh-title">—</span><span class="sh-x" onclick="closeSheet()">×</span></div>
+    <div id="sh-body"></div>
+  </div>
+</div>
+
+<input type="hidden" id="manSym" value="">
+<input type="hidden" id="manSize" value="100">
+<input type="hidden" id="manLev" value="0">
+<script>
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  BINANCE DEMO TRADING BOT                                   ║
+// ║  API: https://demo-fapi.binance.com  (official demo)        ║
+// ║  Prices: wss://stream.binance.com (public WebSocket)        ║
+// ║  Orders: REAL demo orders on your Binance Demo account      ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+const DEMO_API  = 'https://demo-fapi.binance.com';
+const WS_STREAM = 'wss://stream.binance.com:9443/stream';
+
+// Base symbols — expanded to 30 coins
+let SYMBOLS = [
+  // Tier 1 — always liquid, always fetchable
+  'BTCUSDT','ETHUSDT','BNBUSDT','SOLUSDT','XRPUSDT','DOGEUSDT','ADAUSDT',
+  // Tier 2 — large cap, high volume futures
+  'AVAXUSDT','LINKUSDT','DOTUSDT','LTCUSDT','TRXUSDT','NEARUSDT','ATOMUSDT',
+  'UNIUSDT','AAVEUSDT','FILUSDT','ICPUSDT','VETUSDT','ALGOUSDT',
+  // Tier 3 — mid cap but reliable futures
+  'SUIUSDT','APTUSDT','INJUSDT','SEIUSDT','TIAUSDT','OPUSDT','ARBUSDT',
+  'WLDUSDT','STXUSDT','RUNEUSDT','KAVAUSDT','ZILUSDT','IOTAUSDT',
+  'BANDUSDT','CRVUSDT','GRTUSDT','SNXUSDT','1INCHUSDT','SANDUSDT',
+  'MANAUSDT','GALAUSDT','ENJUSDT','CHZUSDT','FLOWUSDT','EGLDUSDT',
+  // Extra volume coins confirmed on futures
+  'ZECUSDT','DASHUSDT','XMRUSDT','COMPUSDT','YFIUSDT','SUSHIUSDT',
+  '1000SHIBUSDT','1000PEPEUSDT','WIFUSDT','BONKUSDT','FLOKIUSDT'
+];
+const ICONS = {
+  BTCUSDT:'₿', ETHUSDT:'Ξ',  BNBUSDT:'B',  SOLUSDT:'◎',  XRPUSDT:'✕',
+  DOGEUSDT:'Ð',ADAUSDT:'₳',  AVAXUSDT:'A', LINKUSDT:'⬡', DOTUSDT:'●',
+  LTCUSDT:'Ł', TRXUSDT:'T',  NEARUSDT:'N', ATOMUSDT:'⚛', UNIUSDT:'🦄',
+  AAVEUSDT:'A',FILUSDT:'F',  ICPUSDT:'I',  VETUSDT:'V',  ALGOUSDT:'A',
+  SUIUSDT:'S', APTUSDT:'A',  INJUSDT:'I',  SEIUSDT:'S',  TIAUSDT:'T',
+  OPUSDT:'O',  ARBUSDT:'A',  WLDUSDT:'W',  STXUSDT:'S',  RUNEUSDT:'R',
+  KAVAUSDT:'K',ZILUSDT:'Z',  IOTAUSDT:'I', BANDUSDT:'B', CRVUSDT:'C',
+  GRTUSDT:'G', SNXUSDT:'S',  SANDUSDT:'S', MANAUSDT:'M', GALAUSDT:'G',
+  ENJUSDT:'E', CHZUSDT:'C',  FLOWUSDT:'F', EGLDUSDT:'E', ZECUSDT:'Z',
+  DASHUSDT:'D',XMRUSDT:'X',  COMPUSDT:'C', YFIUSDT:'Y',  SUSHIUSDT:'S',
+  '1INCHUSDT':'1','1000SHIBUSDT':'🐕','1000PEPEUSDT':'🐸',
+  WIFUSDT:'🐶',BONKUSDT:'🐕', FLOKIUSDT:'F',
+};
+
+// Proven tradeable symbols cache — validated by successful candle fetch
+const provenSymbols = new Set([
+  'BTCUSDT','ETHUSDT','BNBUSDT','SOLUSDT','XRPUSDT','DOGEUSDT','ADAUSDT',
+  'AVAXUSDT','LINKUSDT','DOTUSDT','LTCUSDT','TRXUSDT','NEARUSDT','ATOMUSDT'
+]);
+
+async function canFetchCandles(sym) {
+  // Quick probe — just 5 candles to check if symbol is tradeable on futures
+  try {
+    const r = await fetch(
+      'https://fapi.binance.com/fapi/v1/klines?symbol='+sym+'&interval=5m&limit=5',
+      { signal: AbortSignal.timeout(4000) }
+    );
+    const d = await r.json();
+    if (Array.isArray(d) && d.length >= 3) { provenSymbols.add(sym); return true; }
+  } catch(e) {}
+  // Try spot as fallback
+  try {
+    const r = await fetch(
+      'https://api.binance.com/api/v3/klines?symbol='+sym+'&interval=5m&limit=5',
+      { signal: AbortSignal.timeout(4000) }
+    );
+    const d = await r.json();
+    if (Array.isArray(d) && d.length >= 3) { provenSymbols.add(sym); return true; }
+  } catch(e) {}
+  return false;
+}
+
+async function loadTopGainers() {
+  try {
+    const r = await fetch('https://fapi.binance.com/fapi/v1/ticker/24hr');
+    const all = await r.json();
+
+    const STABLES = new Set(['USDCUSDT','USD1USDT','EURUSDT','PAXGUSDT','STABLEUSDT',
+      'TUSDUSDT','BUSDUSDT','FDUSDUSDT','USDTUSDT','DAIUSDT','FRAXUSDT',
+      'USDDUSDT','GUSDUSDT','LUSDUSDT','XAUUSDT','BTCDOMUSDT','USDTBINANANCE']);
+
+    // Get top 40 by volume and price change
+    const candidates = all
+      .filter(t => {
+        if (!t.symbol.endsWith('USDT')) return false;
+        if (t.symbol.includes('_')) return false;
+        if (STABLES.has(t.symbol)) return false;
+        if (SKIP_SYMBOLS.has(t.symbol)) return false;
+        if (parseFloat(t.quoteVolume) < 100000000) return false; // min $100M volume
+        if (Math.abs(parseFloat(t.priceChangePercent)) < 0.3) return false;
+        return true;
+      })
+      .sort((a,b) => parseFloat(b.priceChangePercent) - parseFloat(a.priceChangePercent))
+      .slice(0, 40);
+
+    // Seed BOTH prices AND 24h change for all symbols
+    all.forEach(t => {
+      if (t.symbol) {
+        if (st.prices[t.symbol] === undefined) st.prices[t.symbol] = parseFloat(t.lastPrice);
+        st.change24h[t.symbol] = parseFloat(t.priceChangePercent);
+      }
+    });
+
+    // Separate: already proven vs needs validation
+    const proven  = candidates.filter(t => provenSymbols.has(t.symbol)).map(t => t.symbol);
+    const unknown = candidates.filter(t => !provenSymbols.has(t.symbol)).map(t => t.symbol);
+
+    // Add proven ones immediately
+    const top = proven.slice(0, 20);
+    gainersCache = top;
+    if (top.length) {
+      // Use addSymbolLive to ensure kline WS + candles are connected for each
+      top.forEach(sym => addSymbolLive(sym));
+      log('🔥 Gainers (proven): '+top.slice(0,5).join(', ')+(top.length>5?'…':''), 'ok');
+    }
+
+    // Validate unknown ones in background — don't block scan
+    if (unknown.length > 0) {
+      log('🔍 Validating '+unknown.length+' new gainer symbols…', 'info');
+      (async () => {
+        let added = 0;
+        for (const sym of unknown) {
+          if (added >= 10) break; // max 10 new per refresh
+          if (await canFetchCandles(sym)) {
+            if (!SYMBOLS.includes(sym)) {
+              await addSymbolLive(sym); // connects WS + fetches candles
+              gainersCache = [...new Set([sym, ...gainersCache])];
+              added++;
+              log('✅ Validated gainer: '+sym, 'ok');
+            }
+          }
+          await new Promise(r => setTimeout(r, 300)); // rate limit
+        }
+        if (added > 0) {
+          runScan(); // refresh scan with newly validated symbols
+          log('🔥 '+added+' new gainer symbols validated and added', 'ok');
+        }
+      })();
+    }
+
+  } catch(e) {
+    log('Gainers fetch failed: '+e.message, 'warn');
+  }
+}
+
+// ── STATE ─────────────────────────────────────────────────────────
+const st = {
+  running: false,
+  connected: false,
+  apiKey: '', apiSecret: '',
+
+  // Market data (from public WebSocket — no CORS)
+  prices: {}, change24h: {}, candles: {}, wsReady: {},
+  wsTicks: 0,
+
+  // Session tracking
+  capital: 2000, todayPnl: 0, totalPnl: 0, todayLoss: 0,
+  tradeCount: 0, wins: 0, losses: 0,
+  openPos: [], allTrades: [], pnlHistory: [0],
+
+  ws: null, wsKlines: {},
+  loopInterval: null, monitorInterval: null, balanceInterval: null, syncInterval: null,
+  tickStep: 0,
+
+  cfg: { strategy:'mixed', size:50, leverage:20, tp:20, sl:10, maxTrades:300, maxOpen:5, startCapital:2000 },
+  togs: { dlg:true, tpsl:true, auto:true, slip:true }
+};
+
+// ══════════════════════════════════════════════════════════════════
+// HMAC-SHA256 SIGNING (Web Crypto API — works in mobile browsers)
+// ══════════════════════════════════════════════════════════════════
+async function sign(secret, message) {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw', enc.encode(secret),
+    { name:'HMAC', hash:'SHA-256' }, false, ['sign']
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(message));
+  return Array.from(new Uint8Array(sig)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// BINANCE DEMO API CALLS
+// ══════════════════════════════════════════════════════════════════
+async function demoDELETE(path, params={}) {
+  try {
+    params.timestamp  = Date.now();
+    params.recvWindow = 10000;
+    const qs  = new URLSearchParams(params).toString();
+    const sig = await sign(st.apiSecret, qs);
+    // Try direct DELETE
+    try {
+      const r = await fetch(DEMO_API+path+'?'+qs+'&signature='+sig, {
+        method:'DELETE', headers:{'X-MBX-APIKEY':st.apiKey}, signal:AbortSignal.timeout(8000)
+      });
+      const d = await r.json();
+      if (d && d.code && d.code < 0) throw new Error(d.msg||'DELETE error');
+      return d;
+    } catch(e) { /* try proxy */ }
+    // Proxy fallback
+    if (!activeProxy) await findProxy();
+    if (!activeProxy) return null;
+    params.timestamp  = Date.now(); // fresh timestamp for proxy
+    const qs2  = new URLSearchParams(params).toString();
+    const sig2 = await sign(st.apiSecret, qs2);
+    const r2 = await fetch(activeProxy+encodeURIComponent(DEMO_API+path+'?'+qs2+'&signature='+sig2), {
+      method:'DELETE', headers:{'X-MBX-APIKEY':st.apiKey}, signal:AbortSignal.timeout(8000)
+    });
+    return await r2.json();
+  } catch(e) { return null; }
+}
+async function demoGET(path, params={}) {
+  try {
+    params.timestamp = Date.now();
+    params.recvWindow = 10000; // wider window to fix timestamp errors
+    const qs  = new URLSearchParams(params).toString();
+    const sig = await sign(st.apiSecret, qs);
+    const fullUrl = DEMO_API+path+'?'+qs+'&signature='+sig;
+    // Try direct first
+    try {
+      const res = await fetch(fullUrl, {headers:{'X-MBX-APIKEY':st.apiKey},signal:AbortSignal.timeout(6000)});
+      const data = await res.json();
+      if (data.code && data.code < 0) throw new Error(data.msg);
+      return data;
+    } catch(e2) {}
+    // Fallback to proxy
+    if (!activeProxy) await findProxy();
+    if (!activeProxy) return null;
+    // Re-sign with fresh timestamp for proxy
+    params.timestamp = Date.now();
+    const qs2 = new URLSearchParams(params).toString();
+    const sig2 = await sign(st.apiSecret, qs2);
+    const proxyUrl = activeProxy + encodeURIComponent(DEMO_API+path+'?'+qs2+'&signature='+sig2);
+    const res2 = await fetch(proxyUrl, {headers:{'X-MBX-APIKEY':st.apiKey},signal:AbortSignal.timeout(8000)});
+    const data2 = await res2.json();
+    if (data2.code && data2.code < 0) throw new Error(data2.msg);
+    return data2;
+  } catch(e) {
+    log('GET '+path+': '+e.message,'err');
+    return null;
+  }
+}
+
+// CORS proxies — tried in order until one works
+const PROXIES = [
+  'https://corsproxy.io/?',
+  'https://api.allorigins.win/raw?url=',
+  'https://corsproxy.org/?url=',
+  'https://proxy.cors.sh/',
+  'https://thingproxy.freeboard.io/fetch/',
+];
+let activeProxy = null;
+let proxyFailCount = 0;
+
+async function findProxy(force=false) {
+  if (activeProxy && !force) return activeProxy;
+  for (const p of PROXIES) {
+    try {
+      const url = p + encodeURIComponent('https://demo-fapi.binance.com/fapi/v1/time');
+      const r = await fetch(url, {signal:AbortSignal.timeout(4000)});
+      if (r.ok || r.status===400) { 
+        activeProxy=p; proxyFailCount=0;
+        log('✅ Proxy: '+p.split('/')[2],'ok'); 
+        localStorage.setItem('demoProxy', p);
+        return p; 
+      }
+    } catch(e){}
+  }
+  log('⚠️ All proxies failed','warn');
+  return null;
+}
+
+async function demoPOST(path, params={}) {
+  try {
+    params.timestamp = Date.now();
+    params.recvWindow = 10000;
+    const qs  = new URLSearchParams(params).toString();
+    const sig = await sign(st.apiSecret, qs);
+    const body = qs + '&signature=' + sig;
+
+    // Try direct POST first (works if CORS headers set by server)
+    try {
+      const res = await fetch(`${DEMO_API}${path}`, {
+        method: 'POST',
+        headers: {'X-MBX-APIKEY': st.apiKey, 'Content-Type': 'application/x-www-form-urlencoded'},
+        body,
+        signal: AbortSignal.timeout(8000)
+      });
+      const data = await res.json();
+      if (data.code && data.code < 0) throw new Error(data.msg);
+      log('✅ Direct POST success: '+path,'ok');
+      return data;
+    } catch(e) {
+      log('Direct POST blocked (CORS) — trying proxy…','warn');
+    }
+
+    // Fallback: proxy POST — rotate if current proxy failing
+    proxyFailCount++;
+    if (proxyFailCount > 3) { activeProxy = null; proxyFailCount = 0; }
+    if (!activeProxy) await findProxy(true);
+    if (!activeProxy) { log('No working proxy for POST','err'); return null; }
+
+    const proxyUrl = activeProxy + encodeURIComponent(`${DEMO_API}${path}`);
+    const res2 = await fetch(proxyUrl, {
+      method: 'POST',
+      headers: {'X-MBX-APIKEY': st.apiKey, 'Content-Type': 'application/x-www-form-urlencoded'},
+      body,
+      signal: AbortSignal.timeout(8000)
+    });
+    const data2 = await res2.json();
+    if (data2.code && data2.code < 0) throw new Error(data2.msg);
+    log('✅ Proxy POST success: '+path,'ok');
+    return data2;
+
+  } catch(e) {
+    // Silence expected non-critical errors
+    if (!e.message.includes('No need to change margin type')) {
+      log('POST error '+path+': '+e.message, e.message.includes('Invalid')?'err':'warn');
+    }
+    return null;
+  }
+}
+
+// ── TEST CONNECTION ────────────────────────────────────────────────
+async function connectAPI() {
+  const key    = document.getElementById('apiKey').value.trim();
+  const secret = document.getElementById('apiSecret').value.trim();
+
+  if (!key || !secret) { toast('Enter both API Key and Secret Key'); return; }
+  if (key.length < 20 || secret.length < 20) { toast('Keys look too short — check them'); return; }
+
+  st.apiKey    = key;
+  st.apiSecret = secret;
+
+  document.getElementById('connectBtn').textContent = 'Connecting…';
+  document.getElementById('connectResult').textContent = 'Testing connection to demo-fapi.binance.com…';
+
+  // Find working CORS proxy for POST orders
+  findProxy();
+
+  // Test with account balance endpoint
+  const bal = await fetchBalance();
+  if (bal) {
+    st.connected = true;
+    setBanner('ok', '🟢 Connected to Binance Demo Trading');
+    document.getElementById('connectBtn').textContent = '✓ Connected';
+    document.getElementById('connectBtn').className   = 'btn btn-ghost';
+    document.getElementById('connectResult').style.color = 'var(--green)';
+    document.getElementById('connectResult').textContent = '✅ Successfully connected to demo-fapi.binance.com';
+    log('✅ Connected to Binance Demo API (demo-fapi.binance.com)', 'ok');
+
+    // Save to localStorage (persists across reloads — fixes auto-logout)
+    localStorage.setItem('demoKey',    key);
+    localStorage.setItem('demoSecret', secret);
+    localStorage.setItem('demoProxy', activeProxy||'');
+
+    updateAPIStatus();
+    startPriceStream();
+    startBalancePolling();
+    loadExchangeInfo(); // fetch tick/step sizes for all symbols — critical for price precision
+    // Immediately sync real positions from Binance after connecting
+    setTimeout(()=>syncPositionsFromBinance(), 3000);
+    toast('Connected to Binance Demo! ✓');
+  } else {
+    st.connected = false;
+    document.getElementById('connectBtn').textContent = 'Retry Connection';
+    document.getElementById('connectResult').style.color = 'var(--red)';
+    document.getElementById('connectResult').textContent = '❌ Connection failed — check your keys';
+    log('❌ Connection failed. Check API key and secret.', 'err');
+    setBanner('err', '❌ Cannot connect — check your API keys in the Keys tab');
+  }
+}
+
+async function fetchBalance() {
+  const data = await demoGET('/fapi/v2/account');
+  if (!data || !data.assets) return null;
+
+  const usdt = data.assets.find(a => a.asset === 'USDT');
+  if (usdt) {
+    const wallet  = parseFloat(usdt.walletBalance);
+    const upnl    = parseFloat(usdt.unrealizedProfit);
+    const margin  = parseFloat(usdt.initialMargin);
+    const equity  = wallet + upnl; // margin balance = true account value
+
+    // Update top bar with raw Binance values
+    setText('acctBal',    '$'+wallet.toFixed(2));
+    setText('acctUpnl',   (upnl>=0?'+':'')+'$'+upnl.toFixed(2));
+    setText('acctMargin', '$'+margin.toFixed(2));
+    document.getElementById('acctUpnl').style.color = upnl>=0?'var(--green)':'var(--red)';
+
+    // Store starting balance on first fetch after connect or reset
+    if (!st.startBalance) {
+      st.startBalance = wallet;
+      st.cfg.startCapital = Math.round(wallet); // update start capital to actual balance
+      log('📊 Session start balance: $'+wallet.toFixed(2), 'info');
+    }
+
+    // AUTHORITATIVE VALUES — everything derives from these
+    st.liveOpenPnl   = upnl;      // Binance unrealized (exact)
+    st.liveBalance   = wallet;    // Binance wallet balance (exact)
+    st.liveEquity    = equity;    // wallet + unrealized
+    st.liveMargin    = margin;    // margin in use
+
+    updateDash();
+  }
+  return data;
+}
+
+function startBalancePolling() {
+  clearInterval(st.balanceInterval);
+  st.balanceInterval = setInterval(fetchBalance, 5000); // 5s for near-realtime PnL
+}
+
+// Refresh 24h change % from REST every 5 minutes (WS only updates on trade)
+let change24hInterval = null;
+async function refresh24hChanges() {
+  try {
+    const r = await fetch('https://fapi.binance.com/fapi/v1/ticker/24hr', {signal: AbortSignal.timeout(8000)});
+    const all = await r.json();
+    if (Array.isArray(all)) {
+      all.forEach(t => {
+        if (SYMBOLS.includes(t.symbol)) {
+          st.change24h[t.symbol] = parseFloat(t.priceChangePercent);
+        }
+      });
+      runScan(); // re-render scan with fresh % values
+    }
+  } catch(e) {}
+}
+function startChange24hPolling() {
+  clearInterval(change24hInterval);
+  change24hInterval = setInterval(refresh24hChanges, 5 * 60 * 1000); // every 5 min
+}
+
+function updateAPIStatus() {
+  document.getElementById('apiStatus').textContent =
+`Status:    Connected ✓
+Endpoint:  demo-fapi.binance.com
+API Key:   ${st.apiKey.substring(0,8)}••••••••
+Strategy:  ${st.cfg.strategy.toUpperCase()}
+Leverage:  ${st.cfg.leverage}x
+Trade Size:$${st.cfg.size}`;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// WEBSOCKET PRICE STREAMS (public — no auth needed, no CORS)
+// ══════════════════════════════════════════════════════════════════
+function startPriceStream() {
+  // Combined mini-ticker + kline streams
+  connectTickerWS();
+  SYMBOLS.forEach(sym => connectKlineWS(sym));
+  log('📡 WebSocket price streams opened', 'info');
+}
+
+function connectTickerWS() {
+  const streams = SYMBOLS.map(s => s.toLowerCase() + '@miniTicker').join('/');
+  const ws = new WebSocket(`${WS_STREAM}?streams=${streams}`);
+
+  ws.onopen = () => {
+    log('📈 Live prices connected','ok');
+    // Load historical candles immediately
+    (async()=>{
+      log('📥 Loading candles for '+SYMBOLS.length+' symbols…','info');
+      // ── PRE-SEED 24h change % from REST (so scan shows correct % immediately) ──
+      try {
+        const t24 = await fetch('https://fapi.binance.com/fapi/v1/ticker/24hr', {signal: AbortSignal.timeout(8000)});
+        const t24d = await t24.json();
+        if (Array.isArray(t24d)) {
+          t24d.forEach(t => {
+            if (t.symbol && SYMBOLS.includes(t.symbol)) {
+              st.change24h[t.symbol] = parseFloat(t.priceChangePercent);
+              if (!st.prices[t.symbol]) st.prices[t.symbol] = parseFloat(t.lastPrice);
+            }
+          });
+          log('📊 24h price changes loaded for '+Object.keys(st.change24h).length+' symbols','info');
+        }
+      } catch(e) {
+        // fallback: try spot ticker
+        try {
+          const ts = await fetch('https://api.binance.com/api/v3/ticker/24hr', {signal: AbortSignal.timeout(8000)});
+          const tsd = await ts.json();
+          if (Array.isArray(tsd)) {
+            tsd.forEach(t => {
+              if (t.symbol && SYMBOLS.includes(t.symbol)) {
+                st.change24h[t.symbol] = parseFloat(t.priceChangePercent);
+                if (!st.prices[t.symbol]) st.prices[t.symbol] = parseFloat(t.lastPrice);
+              }
+            });
+          }
+        } catch(e2) { log('⚠️ 24h change fetch failed — using WS data','warn'); }
+      }
+      let done=0;
+      const PROXY = 'https://corsproxy.io/?';
+      const FAPI  = 'https://fapi.binance.com/fapi/v1/klines';
+      const SAPI  = 'https://api.binance.com/api/v3/klines';
+
+      async function fetchCandles(sym) {
+        // Try 4 endpoints in order — stop at first success
+        const endpoints = [
+          FAPI+'?symbol='+sym+'&interval=5m&limit=500',
+          SAPI+'?symbol='+sym+'&interval=5m&limit=500',
+          PROXY+encodeURIComponent(FAPI+'?symbol='+sym+'&interval=5m&limit=500'),
+          PROXY+encodeURIComponent(SAPI+'?symbol='+sym+'&interval=5m&limit=500'),
+        ];
+        for (const url of endpoints) {
+          try {
+            const r = await fetch(url, {signal: AbortSignal.timeout(8000)});
+            const d = await r.json();
+            if (Array.isArray(d) && d.length > 10) {
+              return d.map(k=>({open:+k[1],high:+k[2],low:+k[3],close:+k[4],vol:+k[5],closed:true}));
+            }
+          } catch(e) { /* try next endpoint */ }
+        }
+        return null; // all 4 failed
+      }
+
+      for(const sym of SYMBOLS){
+        const candles = await fetchCandles(sym);
+        if (candles) {
+          st.candles[sym] = candles;
+          st.wsReady[sym] = true;
+          done++;
+        } else {
+          log('⚠️ '+sym+': all endpoints failed — will retry','warn');
+          fetchFailCount[sym] = (fetchFailCount[sym]||0)+1;
+        }
+        await new Promise(r=>setTimeout(r,60));
+      }
+
+      // Retry failed symbols once after a short delay
+      const failed = SYMBOLS.filter(s => !st.wsReady[s]);
+      if (failed.length > 0) {
+        log('🔄 Retrying '+failed.length+' failed symbols…','info');
+        await new Promise(r=>setTimeout(r,3000));
+        for (const sym of failed) {
+          const candles = await fetchCandles(sym);
+          if (candles) {
+            st.candles[sym] = candles;
+            st.wsReady[sym] = true;
+            done++;
+            log('✅ Retry success: '+sym,'ok');
+          }
+          await new Promise(r=>setTimeout(r,200));
+        }
+      }
+      log('✅ '+done+' symbols ready — scanning now!','ok');
+      if(st.connected) setBanner('ok','🟢 Connected to Binance Demo — '+done+' symbols loaded!');
+      loadTopGainers().then(()=>runScan());
+      if(st.running) botLoop();
+    })();
+  };
+  ws.onmessage = e => {
+    try {
+      const d = JSON.parse(e.data).data;
+      if (!d?.s || !SYMBOLS.includes(d.s)) return;
+      st.prices[d.s]    = parseFloat(d.c);
+      st.change24h[d.s] = parseFloat(d.P);
+      st.wsTicks++;
+      setText('ws-ticks', st.wsTicks);
+      updateTicker();
+      if (st.running) { updatePnl(); renderOpenPos(); }
+    } catch(e){}
+  };
+  ws.onerror = () => {};
+  ws.onclose = () => { setTimeout(connectTickerWS, 5000); };
+  st.ws = ws;
+}
+
+function connectKlineWS(sym) {
+  // Don't open duplicate connections
+  const existing = st.wsKlines[sym];
+  if (existing && existing.readyState <= 1) return; // already CONNECTING or OPEN
+  const ws = new WebSocket(`wss://stream.binance.com:9443/ws/${sym.toLowerCase()}@kline_5m`);
+  ws.onmessage = e => {
+    try {
+      const k = JSON.parse(e.data).k;
+      if (!k) return;
+      const candle = { open:parseFloat(k.o), high:parseFloat(k.h), low:parseFloat(k.l), close:parseFloat(k.c), vol:parseFloat(k.v), closed:k.x };
+      // CRITICAL: always update the live price from the kline stream
+      st.prices[sym] = parseFloat(k.c);
+      if (!st.candles[sym]) st.candles[sym] = [];
+      if (candle.closed) {
+        st.candles[sym].push(candle);
+        if (st.candles[sym].length > 100) st.candles[sym].shift();
+        st.wsReady[sym] = st.candles[sym].length >= 20;
+      } else {
+        const arr = st.candles[sym];
+        if (arr.length > 0) arr[arr.length-1] = candle; else arr.push(candle);
+        st.wsReady[sym] = arr.length >= 20;
+      }
+    } catch(e){}
+  };
+  ws.onerror = () => {};
+  ws.onclose = () => { setTimeout(() => connectKlineWS(sym), 3000); };
+  st.wsKlines[sym] = ws;
+}
+
+// Add a new symbol at runtime — connects WS + fetches candles immediately
+async function addSymbolLive(sym) {
+  if (SYMBOLS.includes(sym) && st.wsKlines[sym] && st.wsKlines[sym].readyState <= 1) return;
+  if (!SYMBOLS.includes(sym)) {
+    SYMBOLS = [...new Set([sym, ...SYMBOLS])].slice(0, 60);
+  }
+  // Connect kline WS immediately
+  connectKlineWS(sym);
+  // Fetch candles right away so wsReady becomes true fast
+  try {
+    const urls = [
+      'https://fapi.binance.com/fapi/v1/klines?symbol='+sym+'&interval=5m&limit=100',
+      'https://api.binance.com/api/v3/klines?symbol='+sym+'&interval=5m&limit=100',
+    ];
+    for (const url of urls) {
+      try {
+        const r = await fetch(url, {signal: AbortSignal.timeout(6000)});
+        const d = await r.json();
+        if (Array.isArray(d) && d.length > 10) {
+          st.candles[sym] = d.map(k=>({open:+k[1],high:+k[2],low:+k[3],close:+k[4],vol:+k[5],closed:true}));
+          st.wsReady[sym] = true;
+          // Seed current price from last candle
+          const last = st.candles[sym][st.candles[sym].length-1];
+          if (!st.prices[sym]) st.prices[sym] = last.close;
+          break;
+        }
+      } catch(e) {}
+    }
+    // Also fetch current price via ticker
+    try {
+      const tr = await fetch('https://fapi.binance.com/fapi/v1/ticker/24hr?symbol='+sym, {signal: AbortSignal.timeout(5000)});
+      const td = await tr.json();
+      if (td.lastPrice) {
+        st.prices[sym]    = parseFloat(td.lastPrice);
+        st.change24h[sym] = parseFloat(td.priceChangePercent);
+      }
+    } catch(e) {}
+  } catch(e) {}
+  // NOTE: kline WS already updates st.prices[sym] on every tick (line in connectKlineWS)
+  // We do NOT reconnect the combined miniTicker stream — closing it drops prices for ALL
+  // symbols for 500ms. The kline stream is sufficient for price tracking.
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INDICATORS
+// ══════════════════════════════════════════════════════════════════
+function rsi(candles, p=14) {
+  if (candles.length < p+1) return 50;
+  let g=0,l=0;
+  for (let i=candles.length-p; i<candles.length; i++) {
+    const d=candles[i].close-candles[i-1].close;
+    if(d>0) g+=d; else l-=d;
+  }
+  return 100-100/(1+g/(l||.0001));
+}
+function ema(arr,n){ const k=2/(n+1);let e=arr[0];for(let i=1;i<arr.length;i++)e=arr[i]*k+e*(1-k);return e; }
+function macd(c){ const cl=c.map(x=>x.close); return cl.length>=26?ema(cl,12)-ema(cl,26):0; }
+function volSpike(c){ if(c.length<11)return 1; const v=c.slice(-11).map(x=>x.vol),avg=v.slice(0,-1).reduce((a,b)=>a+b,0)/10; return v[v.length-1]/(avg||1); }
+
+// ── ADVANCED INDICATORS ────────────────────────────────────────
+function stoch(c,k=14,d=3){
+  if(c.length<k) return{k:50,d:50};
+  const hi=Math.max(...c.slice(-k).map(x=>x.high));
+  const lo=Math.min(...c.slice(-k).map(x=>x.low));
+  const kv=((c[c.length-1].close-lo)/(hi-lo||1))*100;
+  return{k:kv,d:kv}; // simplified
+}
+function atr(c,p=14){
+  if(c.length<p+1) return 0;
+  let sum=0;
+  for(let i=c.length-p;i<c.length;i++){
+    const h=c[i].high,l=c[i].low,pc=c[i-1].close;
+    sum+=Math.max(h-l,Math.abs(h-pc),Math.abs(l-pc));
+  }
+  return sum/p;
+}
+// ── DYNAMIC LEVERAGE BASED ON VOLATILITY ─────────────────────
+// ATR% = ATR/price — measures how volatile the coin is right now
+// High volatility (wild altcoins) → low leverage to avoid liquidation
+// Low volatility (BTC, ETH trending) → high leverage to maximise returns
+function getDynamicLeverage(sym) {
+  const c = st.candles[sym];
+  const price = st.prices[sym];
+  if (!c || c.length < 20 || !price) return st.cfg.leverage;
+
+  const atrVal = atr(c, 14);
+  const atrPct = (atrVal / price) * 100; // ATR as % of price
+
+  // Volatility tiers:
+  // Very low  < 0.3%  → 20x (BTC/ETH in calm market)
+  // Low       0.3-0.6% → 15x
+  // Medium    0.6-1.2% → 10x
+  // High      1.2-2.5% → 6x
+  // Very high 2.5-5%  → 4x
+  // Extreme   > 5%    → 3x (meme coins, small caps)
+  let lev;
+  if      (atrPct < 0.3)  lev = 20;
+  else if (atrPct < 0.6)  lev = 15;
+  else if (atrPct < 1.2)  lev = 10;
+  else if (atrPct < 2.5)  lev = 6;
+  else if (atrPct < 5.0)  lev = 4;
+  else                     lev = 3;
+
+  // cfg.leverage = user's BASE/MINIMUM. Dynamic can go higher for low-vol coins.
+  // But never exceed 20x absolute max for safety
+  lev = Math.max(lev, st.cfg.leverage); // at least user's configured leverage
+  lev = Math.min(lev, 20);              // never exceed 20x
+
+  return lev;
+}
+
+function bollingerBands(cl,p=20,mult=2){
+  if(cl.length<p) return{upper:cl[cl.length-1],lower:cl[cl.length-1],mid:cl[cl.length-1]};
+  const slice=cl.slice(-p);
+  const mid=slice.reduce((a,b)=>a+b,0)/p;
+  const std=Math.sqrt(slice.reduce((a,b)=>a+(b-mid)**2,0)/p);
+  return{upper:mid+mult*std,lower:mid-mult*std,mid};
+}
+function ema50(cl){ return ema(cl,50); }
+
+// ── HIGH-PROBABILITY SIGNAL ENGINE ─────────────────────────────
+// Requires 3+ confluences to fire — much higher win rate
+// Supertrend indicator — most reliable trend-following signal
+function supertrend(candles, period=10, mult=3.0) {
+  if (candles.length < period + 2) return null;
+  const c = candles.slice(-(period * 3));
+  const highs = c.map(x=>x.high), lows = c.map(x=>x.low), closes = c.map(x=>x.close);
+  // Calculate ATR
+  const trs = [];
+  for (let i=1; i<c.length; i++) {
+    trs.push(Math.max(highs[i]-lows[i], Math.abs(highs[i]-closes[i-1]), Math.abs(lows[i]-closes[i-1])));
+  }
+  const atrVal = trs.slice(-period).reduce((a,b)=>a+b,0)/period;
+  const lastClose = closes[closes.length-1];
+  const lastHL2 = (highs[highs.length-1]+lows[lows.length-1])/2;
+  const upperBand = lastHL2 + mult*atrVal;
+  const lowerBand = lastHL2 - mult*atrVal;
+  // Simplified: if close > upperBand midpoint → bull, < lowerBand midpoint → bear
+  const mid = (upperBand + lowerBand) / 2;
+  return { bull: lastClose > mid, bear: lastClose < mid, atr: atrVal };
+}
+
+function getSignal(sym) {
+  const c = st.candles[sym]; if (!c || c.length < 50) return null;
+  const cl = c.map(x=>x.close), cur = cl[cl.length-1];
+  const prev = cl[cl.length-2], prev2 = cl[cl.length-3];
+  try {
+    const r14  = rsi(c, 14);
+    const r7   = rsi(c, 7);
+    const e9   = ema(cl, 9);
+    const e21  = ema(cl, 21);
+    const e50  = ema(cl.slice(-60), 50);
+    const m    = macd(c);
+    const vs   = volSpike(c);
+    const bb   = bollingerBands(cl);
+    const atrV = atr(c, 14);
+    const st2  = stoch(c);
+    const mom5 = cur - cl[cl.length-6];
+    const mom3 = cur - cl[cl.length-4];
+    const st_  = supertrend(c);
+
+    // ── 1H TREND BIAS (from hourlyTrend cache) ──
+    const bias = hourlyTrend[sym]; // 'BULL', 'BEAR', or undefined/NEUTRAL
+
+    let bullSignals=[], bearSignals=[];
+
+    // ── HIGH QUALITY SIGNALS ONLY (removed noisy momentum checks) ──
+
+    // 1. RSI extremes only (not momentum — too noisy)
+    if (r14 < 32 && r7 < 30)  bullSignals.push('RSI oversold '+r14.toFixed(0));
+    if (r14 > 68 && r7 > 70)  bearSignals.push('RSI overbought '+r14.toFixed(0));
+    // RSI reclaim midline (trend confirmation)
+    if (r14 > 50 && rsi(c.slice(0,-3),14) < 50) bullSignals.push('RSI cross 50 up');
+    if (r14 < 50 && rsi(c.slice(0,-3),14) > 50) bearSignals.push('RSI cross 50 down');
+
+    // 2. EMA alignment — full stack only (strong signal)
+    if (e9>e21 && e21>e50 && cur>e9)  bullSignals.push('EMA stack bull');
+    if (e9<e21 && e21<e50 && cur<e9)  bearSignals.push('EMA stack bear');
+    // EMA9/21 cross (recent, not just position)
+    const prevE9  = ema(cl.slice(0,-1), 9);
+    const prevE21 = ema(cl.slice(0,-1), 21);
+    if (e9>e21 && prevE9<=prevE21) bullSignals.push('EMA9 cross up');
+    if (e9<e21 && prevE9>=prevE21) bearSignals.push('EMA9 cross down');
+
+    // 3. MACD crossover (not just direction)
+    const prevM = macd({ map: x=>x, candles: c.slice(0,-1), close: c.slice(0,-1).map(x=>x.close) });
+    const prevMacd = (() => { const cl2=c.slice(0,-1).map(x=>x.close); return cl2.length>=26?ema(cl2,12)-ema(cl2,26):0; })();
+    if (m > 0 && prevMacd <= 0) bullSignals.push('MACD cross zero up');
+    if (m < 0 && prevMacd >= 0) bearSignals.push('MACD cross zero down');
+    if (m > 0 && m > prevMacd)  bullSignals.push('MACD rising');
+    if (m < 0 && m < prevMacd)  bearSignals.push('MACD falling');
+
+    // 4. Bollinger Band extremes + reclaim
+    if (cur < bb.lower)                        bullSignals.push('BB below lower');
+    if (cur > bb.upper)                        bearSignals.push('BB above upper');
+    if (cur > bb.lower && prev <= bb.lower)    bullSignals.push('BB lower bounce');
+    if (cur < bb.upper && prev >= bb.upper)    bearSignals.push('BB upper rejection');
+    if (cur > bb.mid && prev < bb.mid)         bullSignals.push('BB mid cross up');
+    if (cur < bb.mid && prev > bb.mid)         bearSignals.push('BB mid cross down');
+
+    // 5. Volume + price agreement
+    if (vs > 2.5 && cur > prev) bullSignals.push('Vol surge bull '+vs.toFixed(1)+'x');
+    if (vs > 2.5 && cur < prev) bearSignals.push('Vol surge bear '+vs.toFixed(1)+'x');
+
+    // 6. Supertrend (most reliable)
+    if (st_ && st_.bull) bullSignals.push('Supertrend bull');
+    if (st_ && st_.bear) bearSignals.push('Supertrend bear');
+
+    // 7. Strong momentum (3 candles same direction)
+    if (mom5>0 && mom3>0 && cur>prev && prev>prev2) bullSignals.push('3-bar momentum up');
+    if (mom5<0 && mom3<0 && cur<prev && prev<prev2) bearSignals.push('3-bar momentum down');
+
+    // 8. Stochastic
+    if (st2 && st2.k < 25 && st2.k > st2.d) bullSignals.push('Stoch oversold cross');
+    if (st2 && st2.k > 75 && st2.k < st2.d) bearSignals.push('Stoch overbought cross');
+
+    // ── TREND FILTER: block signals AGAINST 1h trend ──
+    // If bias is known and strong, remove counter-trend signals
+    if (bias === 'BULL') bearSignals = bearSignals.filter(s => s.includes('RSI overbought') || s.includes('BB above upper'));
+    if (bias === 'BEAR') bullSignals = bullSignals.filter(s => s.includes('RSI oversold') || s.includes('BB below lower'));
+
+    // ── STRICT ENTRY: need 4+ confirmations ──
+    const minConf = 4;
+
+    // Hard RSI blocks
+    if (r14 < 35 && bearSignals.length > bullSignals.length) return null; // too oversold to short
+    if (r14 > 65 && bullSignals.length > bearSignals.length) return null; // too overbought to long
+
+    // Trend agreement bonus
+    const bullBonus = bias === 'BULL' ? 1 : 0;
+    const bearBonus = bias === 'BEAR' ? 1 : 0;
+    const bullTotal = bullSignals.length + bullBonus;
+    const bearTotal = bearSignals.length + bearBonus;
+
+    if (bullTotal >= minConf && bullTotal > bearTotal + 1) {
+      const conf = Math.min(55 + bullSignals.length * 5 + (bias==='BULL'?10:0), 95);
+      return { dir:'LONG', conf, reason:bullSignals.slice(0,3).join(' | ')+(bias==='BULL'?' [1h BULL]':''), signals:bullSignals.length, atrPct:(atrV/cur*100), trend1h:bias };
+    }
+    if (bearTotal >= minConf && bearTotal > bullTotal + 1) {
+      const conf = Math.min(55 + bearSignals.length * 5 + (bias==='BEAR'?10:0), 95);
+      return { dir:'SHORT', conf, reason:bearSignals.slice(0,3).join(' | ')+(bias==='BEAR'?' [1h BEAR]':''), signals:bearSignals.length, atrPct:(atrV/cur*100), trend1h:bias };
+    }
+    // Weak signal
+    if (bullSignals.length > bearSignals.length)
+      return { dir:'LONG',  conf:40+bullSignals.length*4, reason:'Weak: '+bullSignals.slice(0,2).join(', '), signals:bullSignals.length, weak:true, trend1h:bias };
+    if (bearSignals.length > bullSignals.length)
+      return { dir:'SHORT', conf:40+bearSignals.length*4, reason:'Weak: '+bearSignals.slice(0,2).join(', '), signals:bearSignals.length, weak:true, trend1h:bias };
+    return null;
+  } catch(e) { return null; }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// 1H TREND FILTER — fetch hourly candles, determine bias per symbol
+// ══════════════════════════════════════════════════════════════════
+const hourlyTrend = {};      // sym → 'BULL' | 'BEAR' | 'NEUTRAL'
+const hourlyFetched = {};    // sym → timestamp last fetched
+const HOURLY_TTL = 10 * 60 * 1000; // refresh every 10 min
+
+async function fetchHourlyTrend(sym) {
+  const now = Date.now();
+  if (hourlyFetched[sym] && now - hourlyFetched[sym] < HOURLY_TTL) return;
+  try {
+    const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${sym}&interval=1h&limit=30`;
+    const r = await fetch(url, { signal: AbortSignal.timeout(6000) });
+    const data = await r.json();
+    if (!Array.isArray(data) || data.length < 25) return;
+    const closes = data.map(k => parseFloat(k[4]));
+    const e9h  = ema(closes, 9);
+    const e21h = ema(closes, 21);
+    const gap  = Math.abs(e9h - e21h) / e21h;
+    if (gap < 0.003) {
+      hourlyTrend[sym] = 'NEUTRAL'; // too close — skip
+    } else {
+      hourlyTrend[sym] = e9h > e21h ? 'BULL' : 'BEAR';
+    }
+    hourlyFetched[sym] = now;
+  } catch(e) { /* keep previous value */ }
+}
+
+async function prefetchHourlyTrends(syms) {
+  // Fetch in batches of 5 to avoid flooding
+  for (let i = 0; i < syms.length; i += 5) {
+    await Promise.all(syms.slice(i, i+5).map(s => fetchHourlyTrend(s)));
+    await new Promise(r => setTimeout(r, 200));
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// EXCHANGE INFO — tick/step size cache (fetched once on connect)
+// ══════════════════════════════════════════════════════════════════
+const exchInfo = {}; // sym → { tickSize, stepSize, priceDp, qtyDp }
+
+async function loadExchangeInfo() {
+  try {
+    const r = await fetch('https://fapi.binance.com/fapi/v1/exchangeInfo', {signal: AbortSignal.timeout(10000)});
+    const d = await r.json();
+    if (!d || !Array.isArray(d.symbols)) return;
+    for (const s of d.symbols) {
+      const filters = {};
+      for (const f of s.filters) filters[f.filterType] = f;
+      const tickSize = parseFloat(filters.PRICE_FILTER?.tickSize || '0.01');
+      const stepSize = parseFloat(filters.LOT_SIZE?.stepSize    || '1');
+      // Count decimal places from the string representation (e.g. "0.00100" → 5)
+      const priceDp = (filters.PRICE_FILTER?.tickSize||'0.01').replace(/0+$/,'').split('.')[1]?.length || 2;
+      const qtyDp   = (filters.LOT_SIZE?.stepSize||'1').replace(/0+$/,'').split('.')[1]?.length || 0;
+      exchInfo[s.symbol] = { tickSize, stepSize, priceDp, qtyDp };
+    }
+    log('📐 Exchange info loaded: '+Object.keys(exchInfo).length+' symbols', 'ok');
+  } catch(e) {
+    log('⚠️ Exchange info fetch failed — using fallback precision', 'warn');
+  }
+}
+
+// Round a price to the symbol's exact tickSize
+function roundToTick(sym, price) {
+  const info = exchInfo[sym];
+  if (!info) return parseFloat(price.toPrecision(6)); // fallback
+  const tick = info.tickSize;
+  const rounded = Math.round(price / tick) * tick;
+  return parseFloat(rounded.toFixed(info.priceDp));
+}
+
+// Round a quantity to the symbol's exact stepSize
+function roundToStep(sym, qty) {
+  const info = exchInfo[sym];
+  if (!info) {
+    // Fallback: old price-based logic
+    const entry = st.prices[sym] || 1;
+    if      (entry >= 1000)  return Math.floor(qty * 100)  / 100;
+    else if (entry >= 100)   return Math.floor(qty * 10)   / 10;
+    else if (entry >= 10)    return Math.floor(qty);
+    else if (entry >= 0.01)  return Math.floor(qty);
+    else                     return Math.floor(qty / 10) * 10;
+  }
+  const step = info.stepSize;
+  const rounded = Math.floor(qty / step) * step;
+  return parseFloat(rounded.toFixed(info.qtyDp));
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ORDER PLACEMENT ON BINANCE DEMO
+// ══════════════════════════════════════════════════════════════════
+async function setLeverage(sym, lev) {
+  // Always use CROSS margin (not isolated) — ignore errors if already set
+  try { await demoPOST('/fapi/v1/marginType', { symbol: sym, marginType: 'CROSSED' }); } catch(e) {}
+  return await demoPOST('/fapi/v1/leverage', { symbol:sym, leverage:lev });
+}
+
+// Symbols unavailable or renamed on Binance Futures
+// Only skip symbols that are genuinely delisted or renamed on Binance Futures
+const SKIP_SYMBOLS = new Set([
+  'FTMUSDT',     // delisted
+  'LUNA2USDT',   // delisted
+  'LUNAUSDT',    // delisted
+  'STABLEUSDT',  // not a trading pair
+  'MATICUSDT',   // renamed to POLUSDT
+  'BTCDOMUSDT',  // index, not tradeable
+  'ICPUSDT',     // Symbol is closed on futures
+  'XAGUSDT',     // Silver spot — not futures
+  'MKRUSDT',     // Invalid symbol status
+]);
+const RENAME_SYMBOLS = {'SHIBUSDT':'1000SHIBUSDT','PEPEUSDT':'1000PEPEUSDT','BONKUSDT':'1000BONKUSDT','FLOKIUSDT':'1000FLOKIUSDT'};
+// Transient fail tracker — just for logging, never blocks trading
+const fetchFailCount = {};
+
+async function placeOrder(sym, dir, size) {
+  if (RENAME_SYMBOLS[sym]) sym = RENAME_SYMBOLS[sym];
+  if (SKIP_SYMBOLS.has(sym))                                           return;
+  if (!st.connected)                                { toast('Not connected'); return; }
+  if (st.allTrades.length >= st.cfg.maxTrades)                          return; // total trades limit
+  if (st.togs.dlg && st.todayLoss >= (st.cfg.startCapital||2000)*0.2) return;
+  if (st.openPos.find(t => t.sym === sym))                             return;
+  if (!st.pendingOrder) st.pendingOrder = new Set();
+  if (st.pendingOrder.has(sym)) { log('⏳ '+sym+' pending — skip','warn'); return; }
+  st.pendingOrder.add(sym);
+
+  let trade = null;
+  try {
+    const price = st.prices[sym];
+    if (!price) { st.pendingOrder.delete(sym); log('No price for '+sym,'warn'); return; }
+
+    const slip     = st.togs.slip ? 0.0005 : 0;
+    const entry    = price * (dir==='BUY' ? 1+slip : 1-slip);
+    const lev      = getDynamicLeverage(sym);
+    const notional = size * lev;
+    const tpDist   = st.cfg.tp / notional;
+    const slDist   = st.cfg.sl / notional;
+    const tpPrice  = dir==='BUY' ? entry*(1+tpDist) : entry*(1-tpDist);
+    const slPrice  = dir==='BUY' ? entry*(1-slDist) : entry*(1+slDist);
+    const closeSide = dir==='BUY' ? 'SELL' : 'BUY';
+
+    await setLeverage(sym, lev);
+
+    // Qty precision — use exact stepSize from exchangeInfo
+    const rawQty = notional / entry;
+    const qty = roundToStep(sym, rawQty);
+    if (qty <= 0) { st.pendingOrder.delete(sym); log('❌ Qty too small for '+sym,'err'); return; }
+
+    log('📤 '+dir+' '+qty+' '+sym+' @ ~$'+fmt(entry)+' | '+lev+'x | TP $'+fmt(tpPrice)+' | SL $'+fmt(slPrice), 'info');
+
+    // ── STEP 1: Market entry ──
+    const order = await demoPOST('/fapi/v1/order', {
+      symbol: sym, side: dir, type: 'MARKET',
+      quantity: qty, positionSide: 'BOTH'
+    });
+
+    if (!order || !order.orderId) {
+      st.pendingOrder.delete(sym);
+      const errMsg = order ? String(order.msg||order.message||order.code||'failed') : 'network error';
+      if (errMsg.includes('Symbol is closed')||errMsg.includes('Invalid symbol')||errMsg.includes('not valid')) {
+        SKIP_SYMBOLS.add(sym); log('🚫 Auto-blocked '+sym+': '+errMsg,'warn');
+      }
+      log('❌ Order failed for '+sym+': '+errMsg,'err');
+      return;
+    }
+    log('✅ ENTRY FILLED: '+order.side+' '+order.origQty+' '+sym+' | #'+order.orderId, 'ok');
+
+    // ── STEP 2: Native TP via LIMIT order (LIMIT works on demo-fapi) ──
+    // STOP_MARKET/TAKE_PROFIT_MARKET are not supported on demo endpoint
+    // LIMIT orders ARE supported and persist on Binance independently
+    const tpRounded = roundToTick(sym, tpPrice);
+    const tpOrder = await demoPOST('/fapi/v1/order', {
+      symbol: sym,
+      side: closeSide,
+      type: 'LIMIT',
+      price: tpRounded,
+      quantity: qty,
+      timeInForce: 'GTC',
+      reduceOnly: 'true',
+      positionSide: 'BOTH'
+    });
+    const tpOrderId = tpOrder?.orderId || null;
+    if (tpOrderId) {
+      log('🎯 TP LIMIT order on Binance @ $'+fmt(tpRounded)+' | #'+tpOrderId+' (GTC)', 'ok');
+    } else {
+      const e = tpOrder ? String(tpOrder.msg||tpOrder.code||tpOrder.message||'failed') : 'no response';
+      log('⚠️ TP limit failed ('+e+') — local monitor handles TP','warn');
+    }
+
+    // ── STEP 3: SL via LIMIT order (persists on Binance) ──
+    // Place a limit order at slPrice so it sits on Binance orderbook
+    // If price gaps through it won't fill perfectly but provides partial protection
+    // Local monitor also watches as backup
+    const slRounded = roundToTick(sym, slPrice);
+    const slOrder = await demoPOST('/fapi/v1/order', {
+      symbol: sym,
+      side: closeSide,
+      type: 'LIMIT',
+      price: slRounded,
+      quantity: qty,
+      timeInForce: 'GTC',
+      reduceOnly: 'true',
+      positionSide: 'BOTH'
+    });
+    const slOrderId = slOrder?.orderId || null;
+    if (slOrderId) {
+      log('🛡 SL LIMIT on Binance @ $'+fmt(slRounded)+' | #'+slOrderId+' (GTC)', 'ok');
+    } else {
+      const slErr = slOrder ? String(slOrder.msg||slOrder.code||'failed') : 'no response';
+      log('🛡 SL @ $'+fmt(slRounded)+' — local monitor only (limit failed: '+slErr+')', 'warn');
+    }
+
+    // ── STEP 4: Track locally ──
+    const curSig = st.wsReady[sym] ? getSignal(sym) : null;
+    trade = {
+      id: order.orderId, sym, dir,
+      size, lev, price: entry, notional,
+      tpPrice, slPrice,
+      qty, orderId: order.orderId,
+      slOrderId: slOrderId,
+      tpOrderId: tpOrderId,
+      nativeSL: !!(slOrderId),
+      nativeTP: !!(tpOrderId),
+      reason:      curSig ? curSig.reason : 'Manual order',
+      openReason:  curSig ? curSig.reason : 'Manual order',
+      openConf:    curSig ? curSig.conf   : null,
+      signals:     curSig ? curSig.signals: null,
+      time:          new Date().toLocaleTimeString(),
+      openTime:      new Date().toLocaleTimeString(),
+      openTimestamp: Date.now(), _ts: Date.now(),
+      status: 'OPEN', pnl: 0
+    };
+
+  } catch(e) {
+    st.pendingOrder.delete(sym);
+    log('❌ Unexpected error for '+sym+': '+e.message,'err');
+    return;
+  }
+
+  st.pendingOrder.delete(sym);
+  if (!trade) return;
+  st.openPos.push(trade);
+  st.allTrades.unshift(trade);
+  syncEmptyCount = 0; // reset sync grace — new position just opened
+  // tradeCount = total trades ever opened (open + closed)
+  st.tradeCount = st.allTrades.length;
+  st.wins   = st.allTrades.filter(t=>t.status==='WIN').length;
+  st.losses = st.allTrades.filter(t=>t.status==='LOSS').length;
+
+  const protection = (trade.nativeSL && trade.nativeTP) ? '🛡🎯 SL+TP on Binance' : trade.nativeTP ? '🎯 TP on Binance + local SL' : trade.nativeSL ? '🛡 SL on Binance + local TP' : '⚠️ Local monitor only';
+  saveState(); updateDash(); renderOpenPos();
+  toast('Demo '+(dir==='BUY'?'LONG':'SHORT')+' placed | '+protection);
+  log('📊 Position summary: '+sym+' | '+protection,'ok');
+}
+
+function confirmClose(id) {
+  const sid = String(id);
+  const trade = st.openPos.find(t => String(t.id) === sid || String(t.orderId) === sid);
+  if (!trade) {
+    // Check if it's stale in allTrades — mark as closed and remove
+    const stale = st.allTrades.find(t => (String(t.id)===sid||String(t.orderId)===sid) && t.status==='OPEN');
+    if (stale) {
+      stale.status = 'LOSS'; stale.closeReason = 'Stale — removed';
+      saveState(); renderTrades(); renderOpenPos();
+      log('🗑 Removed stale trade '+stale.sym+' (not on Binance)','warn');
+      toast('Stale trade removed — sync Binance to refresh');
+    } else {
+      log('Close failed — position not found: '+id,'warn');
+      toast('Not found — tap Sync Binance');
+    }
+    return;
+  }
+  const pnl = trade.pnl || 0;
+  const sym = trade.sym.replace('USDT','/USDT');
+  const dir = trade.dir==='BUY'?'LONG':'SHORT';
+  if (confirm('Close ' + sym + ' ' + dir + '?\nCurrent PnL: ' + (pnl>=0?'+':'') + '$' + pnl.toFixed(2))) {
+    closePosition(trade);
+  }
+}
+
+async function closeAllPositions() {
+  if (!st.openPos.length) { toast('No open positions'); return; }
+  const totalPnl = st.openPos.reduce((s,t)=>s+t.pnl,0);
+  const msg = 'Close ALL '+st.openPos.length+' positions?\nTotal PnL: '+(totalPnl>=0?'+':'')+'$'+totalPnl.toFixed(2);
+  if (!confirm(msg)) return;
+  toast('Closing all positions…');
+  const toClose = [...st.openPos];
+  let closed = 0;
+  for (const t of toClose) {
+    await closePosition(t);
+    closed++;
+    await new Promise(r=>setTimeout(r,600)); // small delay between each
+  }
+  toast('Closed '+closed+' positions');
+}
+
+// Emergency close — cancel all open orders then close all positions on Binance
+async function emergencyCloseAll() {
+  if (!confirm('EMERGENCY CLOSE ALL?\nThis cancels all orders and closes everything on Binance.')) return;
+  toast('🚨 Emergency close started…');
+  log('🚨 EMERGENCY CLOSE ALL initiated','err');
+  // Cancel all open orders globally
+  try {
+    const syms = [...new Set(st.openPos.map(t=>t.sym))];
+    for (const sym of syms) {
+      await demoDELETE('/fapi/v1/allOpenOrders', { symbol: sym });
+      await new Promise(r=>setTimeout(r,200));
+    }
+  } catch(e) {}
+  // Close all positions
+  const toClose = [...st.openPos];
+  for (const t of toClose) {
+    await closePosition(t);
+    await new Promise(r=>setTimeout(r,600));
+  }
+  // Sync from Binance to confirm
+  await syncPositionsFromBinance();
+  toast('Emergency close complete — check Binance to confirm');
+}
+
+async function closePosition(trade) {
+  const sym = trade.sym;
+  const closeSide = trade.dir==='BUY' ? 'SELL' : 'BUY';
+
+  log('🔄 Closing '+sym+'…', 'info');
+
+  // STEP 1: Cancel ALL open orders for this symbol first
+  // This clears any stale reduceOnly orders that block new closes
+  try {
+    await demoDELETE('/fapi/v1/allOpenOrders', { symbol: sym });
+    log('🗑 Cancelled open orders for '+sym, 'info');
+  } catch(e) { /* no open orders — fine */ }
+
+  // STEP 2: Get real position size from Binance
+  let qty = trade.qty;
+  let positionExists = false;
+  try {
+    const risk = await demoGET('/fapi/v2/positionRisk', {symbol: sym});
+    if (Array.isArray(risk)) {
+      const pos = risk.find(p => p.symbol === sym);
+      if (pos) {
+        const realAmt = Math.abs(parseFloat(pos.positionAmt));
+        if (realAmt > 0) { qty = realAmt; positionExists = true; }
+        else {
+          // Position already closed on Binance — just clean up locally
+          log('ℹ️ '+sym+' already closed on Binance — cleaning local state', 'info');
+          const cur = st.prices[sym] || trade.price;
+          const pd  = (cur - trade.price) / trade.price;
+          const pnl = trade.dir==='BUY' ? trade.notional*pd : -trade.notional*pd;
+          recordClose(trade, pnl, 'Manual close');
+          return;
+        }
+      }
+    }
+  } catch(e) {
+    log('⚠️ Could not verify position for '+sym+': '+e.message, 'warn');
+    positionExists = true; // assume it exists, try anyway
+  }
+
+  // STEP 3: Place market close order — NO reduceOnly
+  const order = await demoPOST('/fapi/v1/order', {
+    symbol: sym,
+    side: closeSide,
+    type: 'MARKET',
+    quantity: qty,
+    positionSide: 'BOTH'
+    // NO reduceOnly — it causes "reduce-only order failed" errors
+  });
+
+  // STEP 4: Only mark closed locally if Binance confirmed it
+  if (order && order.orderId) {
+    const cur = st.prices[sym] || trade.price;
+    const pd  = (cur - trade.price) / trade.price;
+    const pnl = trade.dir==='BUY' ? trade.notional*pd : -trade.notional*pd;
+    trade.closePrice = cur; // save exit price for display
+    recordClose(trade, pnl, 'Manual close');
+    log('✅ '+sym+' closed on Binance | PnL: '+(pnl>=0?'+':'')+'$'+pnl.toFixed(2), pnl>=0?'ok':'warn');
+    toast(sym.replace('USDT','')+' closed '+(pnl>=0?'▲+$':'▼$')+Math.abs(pnl).toFixed(2));
+  } else {
+    // DO NOT call recordClose — position is still open on Binance
+    log('❌ Close FAILED for '+sym+' — still open on Binance. Try again or close manually.', 'err');
+    toast('❌ '+sym.replace('USDT','')+' close failed — try again');
+    closingGuard.delete(String(trade.id)); // release guard so retry works
+  }
+}
+
+function saveState() {
+  try {
+    localStorage.setItem('demoTrades', JSON.stringify(st.allTrades.slice(0,100)));
+    localStorage.setItem('demoOpenPos', JSON.stringify(st.openPos));
+    localStorage.setItem('demoStats', JSON.stringify({wins:st.wins,losses:st.losses,totalPnl:st.totalPnl,tradeCount:st.tradeCount}));
+  } catch(e){}
+}
+
+function loadState() {
+  try {
+    localStorage.removeItem('blockedSyms'); // cleanup old blocking
+    const trades = localStorage.getItem('demoTrades');
+    const open   = localStorage.getItem('demoOpenPos');
+    const stats  = localStorage.getItem('demoStats');
+    if (trades) st.allTrades = JSON.parse(trades);
+    if (open)   st.openPos   = JSON.parse(open);
+    if (stats) {
+      const s=JSON.parse(stats);
+      st.wins=s.wins||0; st.losses=s.losses||0;
+      st.tradeCount=s.tradeCount||0;
+      // Recompute totalPnl from allTrades rather than trusting saved counter
+      st.totalPnl = st.allTrades.filter(t=>t.status!=='OPEN').reduce((s,t)=>s+(t.pnl||0),0);
+    }
+    if (st.openPos.length) log('📂 Restored '+st.openPos.length+' open positions from last session','ok');
+  } catch(e){}
+}
+
+function recordClose(trade, pnl, reason) {
+  // Remove from open positions
+  st.openPos = st.openPos.filter(t => String(t.id) !== String(trade.id));
+  closingGuard.delete(String(trade.id)); // allow re-use of ID if needed
+  // Update trade record
+  trade.status     = pnl > 0 ? 'WIN' : 'LOSS';
+  trade.pnl        = pnl;
+  trade.closeTime  = new Date().toLocaleTimeString();
+  trade.closeTimestamp = Date.now();
+  trade.closeReason = reason;
+  // Save the actual exit price so renderTrades shows correct "Current" for closed trades
+  trade.closePrice = st.prices[trade.sym] || trade.price; // 'Stop Loss', 'Take Profit', or 'Manual close'
+  // Duration logging
+  if (trade.openTimestamp) {
+    var mins = Math.round((trade.closeTimestamp - trade.openTimestamp)/60000);
+    var dur = mins >= 60 ? Math.floor(mins/60)+'h '+(mins%60)+'m' : mins+'m';
+    log('⏱ '+trade.sym+' held for '+dur+' | Reason: '+reason, 'info');
+  }
+  // SL root cause analysis log
+  if (reason === 'Stop Loss') {
+    log('📋 SL Root Cause ['+trade.sym+']: Entry '+fmt(trade.price)+
+        ' → Exit '+fmt(st.prices[trade.sym]||trade.price)+
+        ' | Dir: '+(trade.dir==='BUY'?'LONG':'SHORT')+
+        ' | Opened: '+(trade.openConf||'?')+'% conf · '+(trade.signals||'?')+' signals'+
+        ' | Reason: '+(trade.openReason||'unknown'), 'err');
+  }
+  // Make sure it's in allTrades
+  if (!st.allTrades.find(t => String(t.id)===String(trade.id))) {
+    st.allTrades.unshift(trade);
+  } else {
+    const idx = st.allTrades.findIndex(t => String(t.id)===String(trade.id));
+    if (idx >= 0) st.allTrades[idx] = trade;
+  }
+  // Update stats — totalPnl derived from allTrades, not incremented here
+  st.todayPnl += pnl;
+  if (pnl >= 0) { st.wins++; } else { st.losses++; st.todayLoss += Math.abs(pnl); }
+  // Keep totalPnl in sync by recomputing from closed trades (single source of truth)
+  st.totalPnl = st.allTrades.filter(t=>t.status!=='OPEN').reduce((s,t)=>s+(t.pnl||0),0);
+  st.pnlHistory.push(st.totalPnl);
+  log((pnl>=0?'💰':'🔴')+' CLOSED '+trade.sym+': '+(pnl>=0?'+':'')+'$'+pnl.toFixed(2)+' | '+reason, pnl>=0?'ok':'err');
+  saveState();
+  updateDash(); renderOpenPos(); renderTrades(); drawPnlChart();
+}
+
+let syncEmptyCount = 0; // consecutive syncs returning no positions
+
+async function syncPositionsFromBinance() {
+  // Binance is always ground truth — clean up any ghost positions
+  // Pull REAL open positions + unrealised PnL directly from Binance Demo
+  if (!st.connected) return;
+  try {
+    const data = await demoGET('/fapi/v2/positionRisk');
+    if (!data || !Array.isArray(data)) return;
+
+    const active = data.filter(p => parseFloat(p.positionAmt) !== 0);
+
+    if (active.length === 0) {
+      syncEmptyCount++;
+      if (st.openPos.length > 0) {
+        // Grace period: positionRisk can lag 2-5s after a fill on demo API
+        // Only clear locals if:
+        //   (a) 3 consecutive empty syncs (~45s with 15s interval), AND
+        //   (b) no position was opened in the last 60s
+        const recentOpen = st.openPos.some(t => Date.now() - (t.openTimestamp||0) < 60000);
+        if (recentOpen) {
+          log('📡 Binance returned empty but positions <60s old — waiting for positionRisk to update', 'info');
+          return;
+        }
+        if (syncEmptyCount < 3) {
+          log('📡 Binance empty ('+syncEmptyCount+'/3) — waiting to confirm before clearing', 'info');
+          return;
+        }
+        // 3+ consecutive empty syncs with no recent opens — safe to clear
+        log('📡 Binance: confirmed no open positions ('+syncEmptyCount+'x) — clearing local orphans','warn');
+        st.openPos = [];
+        syncEmptyCount = 0;
+        saveState(); renderOpenPos(); updateDash();
+      } else {
+        syncEmptyCount = 0; // nothing to clear — reset counter
+      }
+      return;
+    }
+    // Binance has positions — reset empty counter
+    syncEmptyCount = 0;
+
+    // Update or add each real Binance position
+    let changed = false;
+    for (const pos of active) {
+      const sym   = pos.symbol;
+      const amt   = parseFloat(pos.positionAmt);
+      const entry = parseFloat(pos.entryPrice);
+      const upnl  = parseFloat(pos.unRealizedProfit);
+      const dir   = amt > 0 ? 'BUY' : 'SELL';
+      const lev   = parseFloat(pos.leverage) || getDynamicLeverage(sym);
+      const notional = Math.abs(amt) * entry;
+
+      // Find matching local position
+      let local = st.openPos.find(t => t.sym === sym);
+      if (local) {
+        // Update PnL from REAL Binance unrealizedProfit (most accurate)
+        local.pnl   = upnl;
+        local.lev   = lev;
+        local.price = local.price || entry;
+        local.qty   = Math.abs(parseFloat(pos.positionAmt)); // sync real qty too
+      } else {
+        // Position exists on Binance but not locally — add it
+        log('📡 Synced from Binance: '+sym+' '+dir,'info');
+        const tpDist = st.cfg.tp / notional;
+        const slDist = st.cfg.sl / notional;
+        const newTrade = {
+          id: sym+'_sync', sym, dir,
+          size: st.cfg.size, lev, price: entry, notional,
+          tpPrice: dir==='BUY' ? entry*(1+tpDist) : entry*(1-tpDist),
+          slPrice:  dir==='BUY' ? entry*(1-slDist) : entry*(1+slDist),
+          qty: Math.abs(amt), orderId: 'binance_sync',
+          openReason: 'Synced from Binance', reason: 'Synced from Binance',
+          time: new Date().toLocaleTimeString(), openTime: new Date().toLocaleTimeString(),
+          openTimestamp: Date.now(), _ts: Date.now(),
+          status: 'OPEN', pnl: upnl
+        };
+        st.openPos.push(newTrade);
+        if (!st.allTrades.find(x=>x.sym===sym && x.status==='OPEN')) st.allTrades.unshift(newTrade);
+        addSymbolLive(sym); // ensure kline WS + fresh price for synced position
+        changed = true;
+      }
+    }
+
+    // Remove locally tracked positions that are no longer on Binance
+    const activeSyms = active.map(p=>p.symbol);
+    const before = st.openPos.length;
+    st.openPos = st.openPos.filter(t => {
+      if (activeSyms.includes(t.sym)) return true;
+      // Position closed on Binance — save all close fields properly
+      t.closePrice     = st.prices[t.sym] || t.price;
+      t.closeTime      = new Date().toLocaleTimeString();
+      t.closeTimestamp = Date.now();
+      t.closeReason    = t.pnl >= 0 ? 'Take Profit' : 'Stop Loss';
+      t.status         = t.pnl >= 0 ? 'WIN' : 'LOSS';
+      if (!st.allTrades.find(x=>x.id===t.id)) st.allTrades.unshift(t);
+      else { const idx=st.allTrades.findIndex(x=>x.id===t.id); if(idx>=0) st.allTrades[idx]=t; }
+      if (t.pnl >= 0) st.wins++; else { st.losses++; st.todayLoss += Math.abs(t.pnl); }
+      st.todayPnl  += t.pnl;
+      st.totalPnl   = st.allTrades.filter(x=>x.status!=='OPEN').reduce((s,x)=>s+(x.pnl||0),0);
+      st.tradeCount = st.allTrades.length;
+      log('📡 '+t.sym+' closed on Binance | '+t.closeReason+' | PnL: '+(t.pnl>=0?'+':'')+'$'+t.pnl.toFixed(2), t.pnl>=0?'ok':'warn');
+      return false;
+    });
+    if (st.openPos.length !== before) changed = true;
+    if (changed) { saveState(); renderTrades(); }
+
+  } catch(e) {
+    log('Sync error: '+e.message,'warn');
+  }
+}
+
+// Guard to prevent double-firing SL/TP
+const closingGuard = new Set();
+
+function updatePnl() {
+  // Called on every price tick — only updates PnL numbers, no closes
+  for (const t of st.openPos) {
+    const cur = st.prices[t.sym];
+    if (!cur) continue;
+    const pd = (cur - t.price) / t.price;
+    t.pnl = t.dir==='BUY' ? t.notional * pd : -(t.notional * pd);
+  }
+}
+
+function monitorOpenPositions() {
+  // Called every 2s from interval — checks TP/SL and triggers closes
+  const snapshot = [...st.openPos];
+
+  // Emergency: for any open position with missing/zero price, kick off a price fetch
+  // and ensure kline WS is running (handles coins added after initial connect)
+  for (const t of snapshot) {
+    if (!st.prices[t.sym] || st.prices[t.sym] === 0) {
+      connectKlineWS(t.sym); // ensure WS is open
+      // Fire-and-forget REST price fetch
+      fetch('https://fapi.binance.com/fapi/v1/ticker/price?symbol='+t.sym, {signal: AbortSignal.timeout(4000)})
+        .then(r=>r.json())
+        .then(d=>{ if(d.price) st.prices[t.sym]=parseFloat(d.price); })
+        .catch(()=>{});
+    }
+  }
+
+  for (const t of snapshot) {
+    const cur = st.prices[t.sym];
+    if (!cur) continue;
+
+    // Update live PnL
+    const pd = (cur - t.price) / t.price;
+    t.pnl = t.dir==='BUY' ? t.notional * pd : -(t.notional * pd);
+
+    // Skip if already being closed
+    if (closingGuard.has(String(t.id))) continue;
+
+    // Only check TP/SL if toggle is on
+    if (!st.togs.tpsl) continue;
+
+    const hitTP = t.dir==='BUY' ? cur >= t.tpPrice : cur <= t.tpPrice;
+    const hitSL = t.dir==='BUY' ? cur <= t.slPrice : cur >= t.slPrice;
+
+    if (hitTP || hitSL) {
+      closingGuard.add(String(t.id)); // lock it immediately
+      const reason = hitTP ? 'Take Profit' : 'Stop Loss';
+      const emoji  = hitTP ? '🎯' : '⛔';
+      t.closePrice = cur; // save exit price before recordClose
+      log(emoji+' '+reason+' HIT: '+t.sym+
+          ' | Entry $'+fmt(t.price)+' | Exit $'+fmt(cur)+
+          ' | PnL: '+(t.pnl>=0?'+':'')+'$'+t.pnl.toFixed(2), hitTP?'ok':'err');
+      // Close on Binance — only recordClose if confirmed
+      (async () => {
+        try {
+          await demoDELETE('/fapi/v1/allOpenOrders', { symbol: t.sym });
+        } catch(e) {}
+        const closeSide = t.dir==='BUY' ? 'SELL' : 'BUY';
+        const order = await demoPOST('/fapi/v1/order', {
+          symbol: t.sym, side: closeSide,
+          type: 'MARKET', quantity: t.qty,
+          positionSide: 'BOTH'
+        });
+        if (order && order.orderId) {
+          recordClose(t, t.pnl, reason);
+        } else {
+          closingGuard.delete(String(t.id)); // retry next cycle
+          log('⚠️ '+reason+' order failed for '+t.sym+' — will retry','warn');
+        }
+      })();
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ADAPTIVE ALGO — learns from win/loss history
+// ══════════════════════════════════════════════════════════════════
+let adaptiveConf = 62;        // dynamic confidence threshold, starts at 62%
+let adaptiveLastCheck = 0;
+
+function runAdaptiveCheck() {
+  const now = Date.now();
+  if (now - adaptiveLastCheck < 90_000) return; // max every 90s
+  const closed = st.allTrades.filter(t => t.status !== 'OPEN');
+  if (closed.length < 6) return;
+  adaptiveLastCheck = now;
+
+  const recent = closed.slice(0, 20); // last 20 closed trades
+  const wins   = recent.filter(t => t.status === 'WIN').length;
+  const wr     = wins / recent.length;
+
+  let newConf = adaptiveConf;
+  if      (wr >= 0.55) newConf = Math.max(60, adaptiveConf - 1); // doing well — slightly loosen
+  else if (wr >= 0.45) newConf = 62;                              // on target — hold
+  else if (wr >= 0.35) newConf = 65;                              // below breakeven — tighten
+  else                 newConf = 70;                              // losing — only high conviction
+
+  if (newConf !== adaptiveConf) {
+    const arrow = newConf > adaptiveConf ? '⬆' : '⬇'; // compare BEFORE updating
+    adaptiveConf = newConf;
+    log('🧠 Adaptive '+arrow+': WR '+Math.round(wr*100)+'% ('+wins+'/'+recent.length+') → min confidence now '+newConf+'%', wr>=0.45?'ok':'warn');
+  }
+
+  // Signal pattern — what do SL trades have in common?
+  const slTrades = recent.filter(t => t.closeReason === 'Stop Loss');
+  const tpTrades = recent.filter(t => t.closeReason === 'Take Profit');
+  if (slTrades.length >= 3) {
+    const reasons = [...new Set(slTrades.map(t=>(t.openReason||'').split('|')[0].trim()))].slice(0,3).join(', ');
+    log('📉 SL pattern ('+slTrades.length+'x): '+reasons, 'warn');
+  }
+  if (tpTrades.length >= 3) {
+    const reasons = [...new Set(tpTrades.map(t=>(t.openReason||'').split('|')[0].trim()))].slice(0,3).join(', ');
+    log('📈 TP pattern ('+tpTrades.length+'x): '+reasons, 'ok');
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// BOT LOOP
+// ══════════════════════════════════════════════════════════════════
+async function botLoop() {
+  if (!st.running) return;
+  st.tickStep++;
+
+  if (!st.connected)                               { log('Not connected to Binance Demo','warn'); return; }
+  if (st.allTrades.length >= st.cfg.maxTrades)    { log('Daily trade limit reached','warn'); return; }
+  if (st.togs.dlg && st.todayLoss >= (st.cfg.startCapital||2000)*0.2) { log('⛔ Daily loss limit hit ($'+(st.cfg.startCapital||2000)*0.2+'). Bot stopped.','err'); stopBot(); return; }
+  if (st.openPos.length >= st.cfg.maxOpen)        return;
+  if (!st.togs.auto)                              return;
+  if (Object.keys(st.prices).length < 3)          return;
+
+  // Safety: don't place orders if API has been timing out recently
+  const recentTimeouts = (st.lastApiTimeout||0) > Date.now() - 60_000;
+  if (recentTimeouts) { return; } // wait for stable connection
+
+  runAdaptiveCheck(); // learn from recent trade history
+
+  const syms = shuffle([...SYMBOLS]);
+  // Prefetch hourly trends for ready symbols (non-blocking, best-effort)
+  const readySyms = syms.filter(s => st.wsReady[s]).slice(0, 20);
+  prefetchHourlyTrends(readySyms); // runs async, fills hourlyTrend cache
+
+  for (const sym of syms) {
+    if (st.openPos.find(t=>t.sym===sym)) continue;
+    if (!st.wsReady[sym]) continue;
+    const sig = getSignal(sym);
+    if (!sig || sig.weak) continue;
+    if (sig.conf < adaptiveConf) continue;
+    // Prefer trend-aligned signals
+    const bias = hourlyTrend[sym];
+    const aligned = !bias || bias === 'NEUTRAL' ||
+      (sig.dir==='LONG' && bias==='BULL') ||
+      (sig.dir==='SHORT' && bias==='BEAR');
+    if (!aligned) {
+      log('⏭ '+sym+' signal '+sig.dir+' vs 1h '+bias+' — skipped (counter-trend)','info');
+      continue;
+    }
+    await placeOrder(sym, sig.dir==='LONG'?'BUY':'SELL', st.cfg.size);
+    break;
+  }
+}
+
+function toggleBot() { st.running ? stopBot() : startBot(); }
+
+function startBot() {
+  if (!st.connected) {
+    toast('Connect your API keys first (Keys tab)');
+    nav('setup'); return;
+  }
+  st.running = true;
+  document.getElementById('mainBtn').textContent = '⏹ STOP BOT';
+  document.getElementById('mainBtn').className   = 'btn btn-r';
+  document.getElementById('botBadge').textContent  = 'RUNNING';
+  document.getElementById('botBadge').className    = 'badge b-run';
+  log('🚀 Demo Bot started — placing REAL demo orders on Binance!', 'ok');
+  requestWakeLock(); // prevent screen sleep while bot is running
+  st.loopInterval    = setInterval(botLoop, 15_000);
+  st.monitorInterval = setInterval(() => { monitorOpenPositions(); renderOpenPos(); updateDash(); }, 2000);
+  st.syncInterval    = setInterval(() => { lastSyncTime=Date.now(); syncPositionsFromBinance(); }, 15_000);
+  botLoop();
+  syncPositionsFromBinance(); // immediate sync on start
+}
+
+function stopBot() {
+  st.running = false;
+  clearInterval(st.loopInterval); clearInterval(st.monitorInterval); clearInterval(st.syncInterval);
+  document.getElementById('mainBtn').textContent = '▶ START DEMO BOT';
+  document.getElementById('mainBtn').className   = 'btn btn-y';
+  document.getElementById('botBadge').textContent  = 'STOPPED';
+  document.getElementById('botBadge').className    = 'badge b-off';
+  log('⏹ Bot stopped.', 'warn');
+}
+
+function resetSession() {
+  stopBot();
+
+  // ── 1. Wipe ALL persisted state ──
+  ['demoStats','demoTrades','demoOpenPos'].forEach(k => localStorage.removeItem(k));
+
+  // ── 2. Reset ALL in-memory state fields completely ──
+  st.capital       = st.cfg.startCapital || 2000;
+  st.todayPnl      = 0;
+  st.totalPnl      = 0;
+  st.todayLoss     = 0;
+  st.tradeCount    = 0;
+  st.wins          = 0;
+  st.losses        = 0;
+  st.openPos       = [];
+  st.allTrades     = [];
+  st.pnlHistory    = [0];
+  st.tickStep      = 0;
+  st.startBalance  = null;  // re-captured on next fetchBalance
+  st.liveBalance   = null;
+  st.liveOpenPnl   = 0;
+  st.liveEquity    = null;
+  st.liveMargin    = 0;
+
+  // ── 3. Reset adaptive algo ──
+  adaptiveConf = 62;
+  adaptiveLastCheck = 0;
+
+  // ── 4. Re-fetch balance so P&L baseline starts from NOW ──
+  if (st.connected) fetchBalance();
+
+  // ── 5. Clear closing guard (any stuck trade locks) ──
+  closingGuard.clear();
+
+  // ── 6. Re-render everything from scratch ──
+  updateDash();
+  renderOpenPos();
+  renderTrades();
+  drawPnlChart();
+
+  log('🔄 Session fully reset — all trades, PnL, and counters cleared', 'ok');
+  toast('✅ Session fully reset');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SCANNER
+// ══════════════════════════════════════════════════════════════════
+let scanMode = 'all';
+let gainersCache = [], losersCache = [];
+
+function setScanMode(mode) {
+  scanMode = mode;
+  ['all','gainers','losers','signals'].forEach(m => {
+    const btn = document.getElementById('sf-'+m);
+    if (!btn) return;
+    btn.style.border = m===mode ? '1px solid var(--accent)' : '1px solid var(--border)';
+    btn.style.color  = m===mode ? 'var(--accent)' : '';
+  });
+  if (mode === 'gainers') loadTopGainers().then(()=>runScan());
+  else if (mode === 'losers') loadTopLosers().then(()=>runScan());
+  else runScan();
+  toast({all:'All coins',gainers:'🔥 Top Gainers',losers:'📉 Top Losers',signals:'⚡ Signal coins only'}[mode]);
+}
+
+async function loadTopLosers() {
+  try {
+    const r=await fetch('https://api.binance.com/api/v3/ticker/24hr');
+    const all=await r.json();
+    if (Array.isArray(all)) {
+      all.forEach(t => { if (t.symbol) st.change24h[t.symbol] = parseFloat(t.priceChangePercent); });
+    }
+    const losers=all
+      .filter(t=>t.symbol.endsWith('USDT')&&!t.symbol.includes('_')&&parseFloat(t.quoteVolume)>50000000)
+      .sort((a,b)=>parseFloat(a.priceChangePercent)-parseFloat(b.priceChangePercent))
+      .slice(0,20).map(t=>t.symbol);
+    losers.forEach(sym => addSymbolLive(sym));
+    losersCache = losers;
+    log('📉 Top losers loaded: '+losers.slice(0,5).join(', ')+'…','ok');
+  }catch(e){log('Top losers failed: '+e.message,'warn');}
+}
+
+function runScan() {
+  const searchTerm = (document.getElementById('symSearch')?.value||'').toUpperCase().trim();
+  let scanSyms = searchTerm ? SYMBOLS.filter(s=>s.includes(searchTerm)) : SYMBOLS;
+  // Apply scan mode filter
+  if (scanMode === 'gainers' && gainersCache.length) scanSyms = gainersCache.filter(s=>SYMBOLS.includes(s));
+  if (scanMode === 'losers'  && losersCache.length)  scanSyms = losersCache.filter(s=>SYMBOLS.includes(s));
+  // Always show all symbols — with loading state if candles not ready yet
+  const results = scanSyms.map(sym => {
+    const cc=st.candles[sym]||[], price=st.prices[sym]||0, chg=st.change24h[sym]||0;
+    return { sym, price, chg, rsi:cc.length>=15?rsi(cc):null, vs:cc.length>=11?volSpike(cc):1,
+             sig:st.wsReady[sym]?getSignal(sym):null, ready:st.wsReady[sym],
+             candleCount: cc.length };
+  }).filter(r => scanMode !== 'signals' || (r.sig && r.sig.conf >= 60))
+    .sort((a,b) => {
+      // Sort: signals first, then by 24h change
+      const ac = b.sig?.conf||0, bc2 = a.sig?.conf||0;
+      if (ac !== bc2) return ac - bc2;
+      return Math.abs(b.chg) - Math.abs(a.chg);
+    });
+
+  const el = document.getElementById('scanList');
+  if (!results.length && SYMBOLS.length === 0) {
+    el.innerHTML = '<div class="empty"><div class="ei">🔑</div>Connect API keys to start scanning</div>';
+    return;
+  }
+  if (!results.length) {
+    el.innerHTML = '<div class="empty"><div class="ei">⏳</div>Loading candles… please wait</div>';
+    return;
+  }
+  el.innerHTML = results.map(r=>{
+    const sig = r.sig;
+    const chgCol = r.chg>0?'var(--green)':r.chg<0?'var(--red)':'var(--dim)';
+    const price = st.prices[r.sym] ? '$'+fmt(st.prices[r.sym]) : '—';
+    const chgStr = r.chg!==0?(r.chg>0?'+':'')+r.chg.toFixed(2)+'%':(r.ready?'0.00%':'···');
+    const icon = ICONS[r.sym]||r.sym.replace('1000','').replace('USDT','').slice(0,2);
+    const iconBg = sig?(sig.dir==='LONG'?'rgba(0,230,118,.12)':'rgba(255,77,109,.12)'):'rgba(85,85,112,.12)';
+    let badge='';
+    if(sig){const bc=sig.dir==='LONG'?'rgba(0,230,118,.18)':'rgba(255,77,109,.18)';const tc=sig.dir==='LONG'?'var(--green)':'var(--red)';badge=`<span style="background:${bc};color:${tc};font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px">${sig.signals}✓ ${sig.dir} ${sig.conf}%</span>`;}
+    else if(r.ready){badge='<span style="background:rgba(85,85,112,.2);color:var(--dim);font-size:9px;font-weight:600;padding:2px 6px;border-radius:4px">WAIT</span>';}
+    else{const pct=r.candleCount>0?Math.round(r.candleCount/50*100):0;badge=`<span style="background:rgba(240,185,11,.1);color:var(--accent);font-size:9px;padding:2px 6px;border-radius:4px">${pct?pct+'%':'···'}</span>`;}
+    const desc = sig?sig.reason:(r.ready?'No signal':(r.candleCount>0?'Loading candles…':'Waiting…'));
+    return `<div style="display:flex;align-items:center;padding:11px 2px;border-bottom:1px solid var(--border);gap:10px;cursor:pointer;transition:background .1s" onclick="openSheet('${r.sym}')" onmouseenter="this.style.background='rgba(255,255,255,.03)'" onmouseleave="this.style.background=''">
+      <div style="width:38px;height:38px;border-radius:10px;background:${iconBg};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0">${icon}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700">${r.sym.replace('USDT','/USDT')} <span style="font-size:9px;color:var(--dim);font-weight:400">Perp</span></div>
+        <div style="font-size:10px;color:var(--dim);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${desc}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;min-width:70px">
+        <div style="font-family:var(--mono);font-size:12px;font-weight:700">${price}</div>
+        <div style="font-family:var(--mono);font-size:12px;font-weight:700;color:${chgCol}">${chgStr}</div>
+      </div>
+      <div style="flex-shrink:0;min-width:72px;text-align:right">${badge}</div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════════════════════════════
+// ── Single source of truth for all PnL ──────────────────────────
+// Never read st.totalPnl directly. Always derive from allTrades + live open pnl.
+function computePnL() {
+  const closed    = st.allTrades.filter(t => t.status !== 'OPEN');
+  const closedPnl = closed.reduce((s, t) => s + (t.pnl || 0), 0);
+
+  // Open PnL — ALWAYS use Binance live value when available
+  const openPnl = typeof st.liveOpenPnl === 'number'
+    ? st.liveOpenPnl
+    : st.openPos.reduce((s, t) => s + (t.pnl || 0), 0);
+
+  // Session P&L — if we have Binance balance, derive directly from wallet change
+  // This is the most accurate: actual realized + unrealized combined
+  // When startBalance is null (just reset), show live open PnL only until next balance fetch
+  const sessionPnl = (!st.startBalance) ? openPnl
+    : (st.liveBalance && st.startBalance)
+      ? (st.liveBalance - st.startBalance) + openPnl
+      : openPnl + closedPnl;
+
+  const wins   = closed.filter(t => t.pnl > 0).length;
+  const losses = closed.filter(t => t.pnl <= 0).length;
+  const wr     = (wins + losses) > 0 ? Math.round(wins / (wins + losses) * 100) : null;
+  const best   = closed.length ? Math.max(...closed.map(t => t.pnl)) : null;
+  const worst  = closed.length ? Math.min(...closed.map(t => t.pnl)) : null;
+  return { closedPnl, openPnl, totalPnl: sessionPnl, closed, wins, losses, wr, best, worst };
+}
+
+function updateDash() {
+  const { closedPnl, openPnl, totalPnl, closed, wins, losses, wr, best, worst } = computePnL();
+  // Session capital = Binance wallet balance (authoritative) or fallback to local estimate
+  const cap = st.liveBalance || ((st.cfg.startCapital||2000) + closedPnl);
+
+  // ── DASH tab metrics ──
+  setText('s-cap', '$' + cap.toFixed(2));
+  const pe = document.getElementById('s-pnl');
+  // Session P&L = total (open + closed) so trader sees real-time picture
+  pe.textContent = (totalPnl>=0?'+':'')+'$'+totalPnl.toFixed(2);
+  pe.className = 'sv ' + (totalPnl>=0?'g':'r');
+  setText('s-pct', ((totalPnl/(st.cfg.startCapital||2000))*100).toFixed(2)+'%');
+  setText('cap-started', 'Started: $'+(st.cfg.startCapital||2000));
+  // tradeCount = total trades ever opened (includes open positions)
+  st.tradeCount = st.allTrades.length;
+  const closedCount = st.allTrades.filter(t=>t.status!=='OPEN').length;
+  setText('s-trades', st.tradeCount+'/'+st.cfg.maxTrades);
+  if(document.getElementById('s-trades-sub')) setText('s-trades-sub', st.openPos.length+' open');
+  setText('s-wr', wr !== null ? wr+'%' : '—');
+  setText('s-wl', wins+'W / '+losses+'L · conf:'+adaptiveConf+'%');
+  setText('posCount', st.openPos.length+' open');
+  const tpHits = st.allTrades.filter(t=>t.closeReason==='Take Profit');
+  const slHits = st.allTrades.filter(t=>t.closeReason==='Stop Loss');
+  if(document.getElementById('s-tp')){
+    setText('s-tp', tpHits.length);
+    const tpAvg = tpHits.length ? (tpHits.reduce((s,t)=>s+(t.pnl||0),0)/tpHits.length).toFixed(2) : '0.00';
+    setText('s-tp-sub','avg +$'+tpAvg);
+  }
+  if(document.getElementById('s-sl')){
+    setText('s-sl', slHits.length);
+    const slAvg = slHits.length ? (slHits.reduce((s,t)=>s+(t.pnl||0),0)/slHits.length).toFixed(2) : '0.00';
+    setText('s-sl-sub','avg $'+slAvg);
+  }
+
+  const p1 = Math.min(Math.max(closedPnl, 0) / 200 * 100, 100);
+  document.getElementById('p1').style.width = p1+'%';
+  setText('p1t', '$'+Math.max(closedPnl,0).toFixed(2));
+  const tradeTotal = st.allTrades.length; // total open+closed
+  document.getElementById('p2').style.width = Math.min(tradeTotal/st.cfg.maxTrades*100, 100)+'%';
+  setText('p2t', tradeTotal+'/'+st.cfg.maxTrades);
+  setText('p2-label', 'Trades (max '+st.cfg.maxTrades+')');
+  document.getElementById('p3').style.width = Math.min(st.todayLoss/200*100,100)+'%';  // $200 max daily loss
+  setText('p3t', '$'+st.todayLoss.toFixed(2));
+
+  // ── TRADES tab summary ──
+  const allClosed = st.allTrades.filter(t=>t.status!=='OPEN');
+  setText('t-total', allClosed.length);
+  const tpe = document.getElementById('t-pnl');
+  // Trades tab Realised P&L = closed only (matches Dash Closed PnL exactly)
+  tpe.textContent = (closedPnl>=0?'+':'')+'$'+closedPnl.toFixed(2);
+  tpe.className = 'sv ' + (closedPnl>=0?'g':'r');
+  setText('t-best',  best  !== null ? (best>=0?'+':'')+'$'+best.toFixed(2)  : '—');
+  setText('t-worst', worst !== null ? (worst>=0?'+':'')+'$'+worst.toFixed(2) : '—');
+
+  // ── Open PnL card (Binance live value preferred) ──
+  const openEl = document.getElementById('open-pnl');
+  if (openEl) {
+    openEl.textContent = (openPnl>=0?'+':'')+'$'+openPnl.toFixed(2);
+    openEl.style.color = openPnl>0?'var(--green)':openPnl<0?'var(--red)':'var(--dim)';
+    setText('open-pnl-sub', st.openPos.length+' position'+(st.openPos.length===1?'':'s'));
+  }
+
+  // ── Closed PnL card ──
+  const closedEl = document.getElementById('closed-pnl');
+  if (closedEl) {
+    closedEl.textContent = (closedPnl>=0?'+':'')+'$'+closedPnl.toFixed(2);
+    closedEl.style.color = closedPnl>0?'var(--green)':closedPnl<0?'var(--red)':'var(--dim)';
+    setText('closed-pnl-sub', closed.length+' trade'+(closed.length===1?'':'s')+' (realised)');
+  }
+
+  // ── Total PnL card (open + closed) ──
+  const totalEl = document.getElementById('total-pnl-card');
+  if (totalEl) {
+    totalEl.textContent = (totalPnl>=0?'+':'')+'$'+totalPnl.toFixed(2);
+    totalEl.style.color = totalPnl>0?'var(--green)':totalPnl<0?'var(--red)':'var(--dim)';
+    setText('total-pnl-sub', 'open + closed');
+  }
+
+  // Keep st.totalPnl in sync as a cache (for save/load compatibility)
+  st.totalPnl = closedPnl;
+
+  drawPnlChart();
+}
+
+function renderOpenPos() {
+  const el=document.getElementById('openPos');
+  if(!st.openPos.length){el.innerHTML='<div class="empty"><div class="ei">📭</div>No open positions</div>';return;}
+  el.innerHTML=st.openPos.map(t=>{
+    const cur=st.prices[t.sym]||t.price;
+    const pnl=t.dir==='BUY'?t.notional*(cur-t.price)/t.price:-t.notional*(cur-t.price)/t.price;
+    t.pnl=pnl;
+    return `<div class="tr" style="cursor:pointer;transition:background .15s" onclick="confirmClose('${t.id}')" onmouseenter="this.style.background='rgba(255,77,109,.04)'" onmouseleave="this.style.background=''">
+      <div style="flex:1;min-width:0">
+        <div class="tr-sym">${t.sym.replace('USDT','/USDT')}</div>
+        <div class="tr-meta" style="margin-top:2px">
+          <span class="chip c-open">DEMO</span>
+          <span class="chip ${t.dir==='BUY'?'c-long':'c-short'}">${t.dir==='BUY'?'LONG':'SHORT'}</span>
+          <span style="color:var(--dim)">$${t.size}×${t.lev}x</span>
+        </div>
+        <div class="tr-meta" style="margin-top:2px;font-size:10px;color:var(--dim)">TP $${fmt(t.tpPrice)} · SL $${fmt(t.slPrice)} ${(t.nativeSL&&t.nativeTP)?'<span style="color:var(--green)">🛡🎯 Both on Binance</span>':t.nativeTP?'<span style="color:var(--green)">🎯 TP on Binance</span>':t.nativeSL?'<span style="color:var(--yellow)">🛡 SL on Binance</span>':'<span style="color:var(--red)">⚠️ Local only</span>'}</div>
+        <div style="margin-top:5px">
+          <span style="background:rgba(255,77,109,.15);color:var(--red);font-size:10px;font-weight:700;padding:3px 10px;border-radius:5px;cursor:pointer" onclick="event.stopPropagation();confirmClose('${t.id}')">✕ CLOSE</span>
+        </div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;padding-left:8px">
+        <div class="tr-pnl" style="font-size:16px;font-weight:700;color:${pnl>=0?'var(--green)':'var(--red)'}">${pnl>=0?'+':''}$${pnl.toFixed(2)}</div>
+        <div style="font-size:11px;color:var(--dim);margin-top:2px">$${fmt(cur)}</div>
+        <div style="font-size:10px;color:var(--dim)">${t.time}</div>
+      </div>
+    </div>`;
+  }).join('');
+  setText('posCount',`${st.openPos.length} open`);
+  // Don't update open-pnl card here — fetchBalance handles it to avoid flickering
+}
+
+let tradeFilter = 'all';
+
+function setTradeFilter(f) {
+  tradeFilter = f;
+  renderTrades();
+}
+
+function getTimeFilter() {
+  const sel = document.getElementById('tf-time');
+  return sel ? sel.value : 'all';
+}
+
+function passesTimeFilter(trade) {
+  const tf = getTimeFilter();
+  if (tf === 'all') return true;
+  const now = new Date();
+  const tradeTime = trade.openTimestamp || trade._ts || 0;
+  if (!tradeTime) return true; // no timestamp — show it
+  const tradeDt = new Date(tradeTime);
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const yesterdayStart = todayStart - 86400000;
+  if (tf === 'today') return tradeTime >= todayStart;
+  if (tf === 'yesterday') return tradeTime >= yesterdayStart && tradeTime < todayStart;
+  if (tf === '7d') return tradeTime >= Date.now() - 7*86400000;
+  if (tf === '30d') return tradeTime >= Date.now() - 30*86400000;
+  return true;
+}
+
+let lastSyncTime = 0;
+async function syncAndRefresh() {
+  toast('⟳ Syncing with Binance…');
+  try {
+    await syncPositionsFromBinance();
+    await fetchBalance();
+    renderOpenPos(); renderTrades(); updateDash();
+    toast('✅ Synced!');
+    log('⟳ Manual sync complete — positions & PnL updated','ok');
+  } catch(e) { toast('Sync failed: '+e.message); }
+}
+async function refreshTradesFromBinance() {
+  const now = Date.now();
+  if (now - lastSyncTime < 5000) { toast('Syncing… please wait'); return; }
+  lastSyncTime = now;
+  log('🔄 Syncing positions from Binance…','info');
+  await syncPositionsFromBinance();
+  renderTrades();
+  toast('Synced with Binance ✓');
+}
+
+function mkBox(label, val, col) {
+  return '<div style="background:var(--surface);border-radius:6px;padding:6px 8px">' +
+    '<div style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px">' + label + '</div>' +
+    '<div style="font-size:12px;font-weight:600;font-family:var(--mono);' + (col?'color:'+col:'') + '">' + val + '</div>' +
+    '</div>';
+}
+
+function renderTrades() {
+  var el = document.getElementById('tradeList');
+  if (!el) return;
+  el.style.overflowY = 'visible';
+
+  var list = st.allTrades.slice().filter(passesTimeFilter);
+  if (tradeFilter === 'open')   list = list.filter(function(t){ return t.status === 'OPEN'; });
+  if (tradeFilter === 'closed') list = list.filter(function(t){ return t.status !== 'OPEN'; });
+  if (tradeFilter === 'win')    list = list.filter(function(t){ return t.status === 'WIN'; });
+  if (tradeFilter === 'loss')   list = list.filter(function(t){ return t.status === 'LOSS'; });
+  if (tradeFilter === 'sl')     list = list.filter(function(t){ return t.closeReason === 'Stop Loss'; });
+  if (tradeFilter === 'tp')     list = list.filter(function(t){ return t.closeReason === 'Take Profit'; });
+  if (tradeFilter === 'manual') list = list.filter(function(t){ return t.closeReason === 'Manual close'; });
+
+  if (!list.length) {
+    var msgs = {open:'No open trades',closed:'No closed trades yet',win:'No winning trades',loss:'No losing trades',sl:'No stop loss hits',tp:'No take profit hits',manual:'No manual closes',all:'No trades yet'};
+    var msg = msgs[tradeFilter] || 'No trades matching filter';
+    el.innerHTML = '<div class="empty"><div class="ei">📋</div>' + msg + '</div>';
+    return;
+  }
+
+  el.innerHTML = list.map(function(t) {
+    var isOpen  = t.status === 'OPEN';
+
+    // For OPEN trades: use live price and calculate live PnL
+    // For CLOSED trades: use saved closePrice and locked pnl — NEVER recalculate
+    var cur, livePnl;
+    if (isOpen) {
+      cur     = st.prices[t.sym] || t.price;
+      livePnl = t.dir==='BUY'
+        ? t.notional * (cur - t.price) / t.price
+        : -t.notional * (cur - t.price) / t.price;
+      t.pnl = livePnl; // update live
+    } else {
+      // Closed trade — use exit price and locked PnL
+      cur     = t.closePrice || t.price; // exit price saved at close time
+      livePnl = t.pnl || 0;             // locked PnL, never recalculate
+    }
+
+    // pnlPct: show % return on margin (size), not on notional
+    // e.g. $20 profit on $50 margin = +40%, not +2% on $1000 notional
+    var pnlPct   = t.size ? ((livePnl / t.size) * 100).toFixed(2) : '0.00';
+    var pnlColor = livePnl >= 0 ? 'var(--green)' : 'var(--red)';
+    var pnlStr   = (livePnl >= 0 ? '+' : '') + '$' + livePnl.toFixed(2);
+    var tradeDir = t.dir === 'BUY' ? 'LONG' : 'SHORT';
+
+    // Current signal on this coin
+    var curSig  = isOpen && st.wsReady[t.sym] ? getSignal(t.sym) : null;
+    var curDir  = curSig ? curSig.dir : null;
+    var curConf = curSig ? curSig.conf : null;
+    var agree   = isOpen && curDir ? (curDir === tradeDir) : null;
+    var agreeColor = agree===null ? 'var(--dim)' : (agree ? 'var(--green)' : 'var(--red)');
+    var agreeLabel = agree===null ? '—' : (agree ? '✅ HOLD — signal agrees' : '⚠️ CAUTION — signal reversed');
+    var durMins = (!isOpen && t.openTimestamp && t.closeTimestamp) ? Math.round((t.closeTimestamp-t.openTimestamp)/60000) : 0;
+    var duration = durMins>0 ? (durMins>=60 ? Math.floor(durMins/60)+'h '+(durMins%60)+'m' : durMins+'m') : '';
+
+    // Status chip
+    var statusChip = isOpen
+      ? '<span style="background:rgba(255,193,7,.15);color:var(--yellow);font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px">⚡ LIVE</span>'
+      : '<span style="background:' + (t.status==='WIN'?'rgba(0,230,118,.15)':'rgba(255,77,109,.15)') + ';color:' + (t.status==='WIN'?'var(--green)':'var(--red)') + ';font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px">' + (t.status==='WIN'?'✅ WIN':'❌ LOSS') + '</span>';
+
+    // Signal intelligence block
+    var sigBlock = isOpen
+      ? '<div style="background:rgba(124,111,255,.08);border:1px solid rgba(124,111,255,.2);border-radius:7px;padding:8px 10px;margin-bottom:8px">' +
+          '<div style="font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:#7c6fff;margin-bottom:4px">📡 Current Signal Intelligence</div>' +
+          '<div style="display:flex;justify-content:space-between;align-items:center">' +
+            '<div>' +
+              '<div style="font-size:12px;font-weight:700;color:' + (curDir?(curDir==='LONG'?'var(--green)':'var(--red)'):'var(--dim)') + '">' + (curDir ? curDir+' — '+curConf+'% conf' : 'No signal now') + '</div>' +
+              '<div style="font-size:10px;color:var(--dim);margin-top:2px">Opened as: ' + tradeDir + ' · Score: ' + (t.signals||'—') + '✓ ' + (t.openConf||'—') + '%</div>' +
+            '</div>' +
+            '<div style="text-align:right"><div style="font-size:11px;font-weight:700;color:' + agreeColor + '">' + agreeLabel + '</div></div>' +
+          '</div>' +
+        '</div>'
+      : '<div style="font-size:10px;color:var(--dim);margin-bottom:6px">📊 Opened: ' + (t.openConf||'—') + '% conf · ' + (t.signals||'—') + ' signals · ' + (t.openReason||t.reason||'Manual') + '</div>';
+
+    var closeBtn = isOpen
+      ? '<span style="background:rgba(255,77,109,.15);color:var(--red);font-size:10px;font-weight:700;padding:4px 12px;border-radius:6px;cursor:pointer" onclick="event.stopPropagation();confirmClose(\''+t.id+'\')">✕ Close</span>'
+      : '';
+
+    return '<div class="card" style="margin-bottom:8px;padding:12px 14px' + (isOpen?';cursor:pointer':'' ) + '"' +
+        (isOpen ? ' onclick="confirmClose(\''+t.id+'\')"' : '') + '>' +
+
+      // Header
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">' +
+        '<div>' +
+          '<div style="font-size:15px;font-weight:700">' + t.sym.replace('USDT','/USDT') + '</div>' +
+          '<div style="display:flex;gap:5px;margin-top:4px;flex-wrap:wrap">' +
+            '<span class="chip ' + (t.dir==='BUY'?'c-long':'c-short') + '">' + (t.dir==='BUY'?'▲ LONG':'▼ SHORT') + '</span>' +
+            statusChip +
+          '</div>' +
+        '</div>' +
+        '<div style="text-align:right">' +
+          '<div style="font-size:18px;font-weight:700;color:'+pnlColor+'">' + pnlStr + '</div>' +
+          '<div style="font-size:11px;color:'+pnlColor+'">' + (livePnl>=0?'+':'') + pnlPct + '%</div>' +
+        '</div>' +
+      '</div>' +
+
+      // Details grid
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px">' +
+        mkBox('Entry', '$'+fmt(t.price)) +
+        mkBox(isOpen ? 'Current' : 'Exit', '$'+fmt(cur), isOpen?pnlColor:'var(--dim)') +
+        mkBox('Leverage', t.lev+'x', 'var(--accent)') +
+        mkBox('Size', '$'+t.size) +
+        mkBox('TP', '$'+fmt(t.tpPrice), 'var(--green)') +
+        mkBox('SL', '$'+fmt(t.slPrice), 'var(--red)') +
+      '</div>' +
+
+      // Signal block
+      sigBlock +
+      // Footer
+      '<div style="display:flex;justify-content:space-between;align-items:center">' +
+        '<div style="font-size:10px;color:var(--dim)">' +
+          '🕐 ' + (t.openTime||t.time) +
+          (t.closeTime && !isOpen ? ' → ' + t.closeTime : '') +
+          (duration ? ' <span style="color:var(--accent)">(' + duration + ')</span>' : '') +
+          ' · #' + (t.orderId||'manual') +
+          (t.closeReason ? ' · ' + t.closeReason : '') +
+        '</div>' +
+        closeBtn +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function updateTicker() {
+  const el=document.getElementById('tickerInner');
+  const items=SYMBOLS.slice(0,8).map(sym=>{
+    const p=st.prices[sym],c=st.change24h[sym]||0;
+    if(!p) return '';
+    const col=c>=0?'var(--green)':'var(--red)';
+    return `<div class="ti"><span class="ti-s">${sym.replace('USDT','')}</span><span class="ti-p">$${fmt(p)}</span><span class="ti-c" style="color:${col}">${c>=0?'+':''}${c.toFixed(2)}%</span></div>`;
+  }).filter(Boolean);
+  if(!items.length) return;
+  el.innerHTML=[...items,...items].join('');
+  el.className='ticker-inner go';
+}
+
+function drawPnlChart() {
+  const canvas=document.getElementById('pnlChart');
+  if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  const w=canvas.offsetWidth,h=canvas.offsetHeight;
+  canvas.width=w*devicePixelRatio; canvas.height=h*devicePixelRatio;
+  ctx.scale(devicePixelRatio,devicePixelRatio);
+  const data=st.pnlHistory;
+  if(data.length<2){ctx.clearRect(0,0,w,h);return;}
+  ctx.clearRect(0,0,w,h);
+  const min=Math.min(...data),max=Math.max(...data),range=max-min||1;
+  const pts=data.map((v,i)=>({x:(i/(data.length-1))*w,y:h-((v-min)/range)*(h-8)-4}));
+  const isPos=data[data.length-1]>=0;
+  const grad=ctx.createLinearGradient(0,0,0,h);
+  grad.addColorStop(0,isPos?'rgba(0,230,118,.3)':'rgba(255,77,109,.3)');
+  grad.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.beginPath(); ctx.moveTo(pts[0].x,h);
+  pts.forEach(p=>ctx.lineTo(p.x,p.y));
+  ctx.lineTo(pts[pts.length-1].x,h); ctx.closePath();
+  ctx.fillStyle=grad; ctx.fill();
+  ctx.beginPath(); pts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
+  ctx.strokeStyle=isPos?'#00e676':'#ff4d6d'; ctx.lineWidth=2; ctx.stroke();
+  const zy=h-((0-min)/range)*(h-8)-4;
+  ctx.beginPath(); ctx.moveTo(0,zy); ctx.lineTo(w,zy);
+  ctx.strokeStyle='rgba(255,255,255,.08)'; ctx.lineWidth=1; ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SHEET / MANUAL
+// ══════════════════════════════════════════════════════════════════
+function buildAnalysisHTML(sym, extra) {
+  const p    = st.prices[sym]||0;
+  const ch   = st.change24h[sym]||0;
+  const cnd  = st.candles[sym]||[];
+  const r14  = cnd.length>=15 ? rsi(cnd,14) : 50;
+  const r7   = cnd.length>=8  ? rsi(cnd,7)  : 50;
+  const cl   = cnd.map(x=>x.close);
+  const e9   = cl.length>=9  ? ema(cl,9)  : p;
+  const e21  = cl.length>=21 ? ema(cl,21) : p;
+  const e50  = cl.length>=50 ? ema(cl.slice(-60),50) : p;
+  const m    = cnd.length>=26 ? macd(cnd) : 0;
+  const vs   = cnd.length>=11 ? volSpike(cnd) : 1;
+  const atrV = cnd.length>=15 ? atr(cnd,14) : 0;
+  const atrP = p>0 ? (atrV/p*100) : 0;
+  const bb   = cl.length>=20 ? bollingerBands(cl) : {upper:p,lower:p,mid:p};
+  const lev  = getDynamicLeverage(sym);
+  const sig  = st.wsReady[sym] ? getSignal(sym) : null;
+
+  // Trend direction
+  const trend = e9>e21 && e21>e50 ? '🟢 Strong Uptrend' : e9>e21 ? '🟡 Weak Uptrend' : e9<e21 && e21<e50 ? '🔴 Strong Downtrend' : '🟡 Weak Downtrend';
+
+  // RSI zone
+  const rsiZone = r14<30?'🟢 Oversold — bounce likely':r14<45?'🟡 Bullish zone':r14>70?'🔴 Overbought — drop likely':r14>55?'🟡 Bearish zone':'⚪ Neutral';
+
+  // BB position
+  const bbPos = p>bb.upper?'Above upper band (overbought)':p<bb.lower?'Below lower band (oversold)':p>bb.mid?'Above midline':'Below midline';
+
+  // Signal display
+  const sigColor = sig?(sig.dir==='LONG'?'var(--green)':'var(--red)'):'var(--dim)';
+  const sigTxt   = sig?sig.dir+' — '+sig.conf+'% ('+sig.signals+' confirmations)':'No trade signal';
+
+  return `
+    <!-- Price header -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div>
+        <div style="font-size:22px;font-weight:700;font-family:var(--mono)">$${fmt(p)}</div>
+        <div style="font-size:13px;color:${ch>=0?'var(--green)':'var(--red)'};font-weight:600">${ch>=0?'+':''}${ch.toFixed(2)}% (24h)</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:11px;color:var(--dim)">Dynamic Leverage</div>
+        <div style="font-size:20px;font-weight:700;color:var(--accent)">${lev}x</div>
+        <div style="font-size:10px;color:var(--dim)">ATR ${atrP.toFixed(2)}%</div>
+      </div>
+    </div>
+
+    <!-- Signal verdict -->
+    <div style="background:${sig?(sig.dir==='LONG'?'rgba(0,230,118,.08)':'rgba(255,77,109,.08)'):'rgba(85,85,112,.08)'};border:1px solid ${sig?(sig.dir==='LONG'?'rgba(0,230,118,.3)':'rgba(255,77,109,.3)'):'var(--border)'};border-radius:10px;padding:12px;margin-bottom:12px">
+      <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--dim);margin-bottom:4px">Signal Verdict</div>
+      <div style="font-size:16px;font-weight:700;color:${sigColor}">${sigTxt}</div>
+      <div style="font-size:11px;color:var(--dim);margin-top:4px;line-height:1.6">${sig?sig.reason:(cnd.length<50?'Need '+Math.max(0,50-cnd.length)+' more candles':'No confluence found')}</div>
+    </div>
+
+    <!-- Indicators grid -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px">
+        <div style="font-size:9px;text-transform:uppercase;color:var(--dim);letter-spacing:1px">RSI 14</div>
+        <div style="font-size:18px;font-weight:700;color:${r14<35||r14>65?'var(--accent)':'var(--text)'};font-family:var(--mono)">${r14.toFixed(1)}</div>
+        <div style="font-size:10px;color:var(--dim)">${rsiZone}</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px">
+        <div style="font-size:9px;text-transform:uppercase;color:var(--dim);letter-spacing:1px">RSI 7</div>
+        <div style="font-size:18px;font-weight:700;color:${r7<35||r7>65?'var(--accent)':'var(--text)'};font-family:var(--mono)">${r7.toFixed(1)}</div>
+        <div style="font-size:10px;color:var(--dim)">${r7>r14?'Rising fast':'Falling fast'}</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px">
+        <div style="font-size:9px;text-transform:uppercase;color:var(--dim);letter-spacing:1px">MACD</div>
+        <div style="font-size:18px;font-weight:700;color:${m>0?'var(--green)':'var(--red)'};font-family:var(--mono)">${m>0?'+':''}${m.toFixed(4)}</div>
+        <div style="font-size:10px;color:var(--dim)">${m>0?'Bullish momentum':'Bearish momentum'}</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px">
+        <div style="font-size:9px;text-transform:uppercase;color:var(--dim);letter-spacing:1px">Volume</div>
+        <div style="font-size:18px;font-weight:700;color:${vs>2?'var(--accent)':vs>1.3?'var(--yellow)':'var(--text)'};font-family:var(--mono)">${vs.toFixed(2)}x</div>
+        <div style="font-size:10px;color:var(--dim)">${vs>2?'High volume!':vs>1.3?'Above average':'Normal'}</div>
+      </div>
+    </div>
+
+    <!-- EMA levels -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:12px">
+      <div style="font-size:9px;text-transform:uppercase;color:var(--dim);letter-spacing:1px;margin-bottom:8px">EMA Levels & Trend</div>
+      <div style="font-size:12px;color:var(--dim)">${trend}</div>
+      <div style="display:flex;justify-content:space-between;margin-top:8px">
+        <span style="font-size:11px">EMA9: <strong style="color:${p>e9?'var(--green)':'var(--red)'}">$${fmt(e9)}</strong></span>
+        <span style="font-size:11px">EMA21: <strong style="color:${p>e21?'var(--green)':'var(--red)'}">$${fmt(e21)}</strong></span>
+        <span style="font-size:11px">EMA50: <strong style="color:${p>e50?'var(--green)':'var(--red)'}">$${fmt(e50)}</strong></span>
+      </div>
+    </div>
+
+    <!-- Bollinger Bands -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:14px">
+      <div style="font-size:9px;text-transform:uppercase;color:var(--dim);letter-spacing:1px;margin-bottom:6px">Bollinger Bands</div>
+      <div style="font-size:11px;margin-bottom:4px">Upper: <strong>$${fmt(bb.upper)}</strong> · Mid: <strong>$${fmt(bb.mid)}</strong> · Lower: <strong>$${fmt(bb.lower)}</strong></div>
+      <div style="font-size:11px;color:var(--dim)">${bbPos}</div>
+    </div>
+
+    <!-- Trade buttons with size input -->
+    <div style="margin-bottom:8px">
+      <div style="font-size:10px;text-transform:uppercase;color:var(--dim);letter-spacing:1px;margin-bottom:6px">Trade Size ($) · Leverage: ${lev}x auto</div>
+      <input class="fi" id="tradeSize" type="number" value="${st.cfg.size}" style="margin-bottom:8px;text-align:center;font-size:16px;font-weight:700">
+    </div>
+    <div class="b2" style="gap:8px">
+      <button class="btn btn-g" style="font-size:15px;padding:14px" onclick="analyzeAndTrade('${sym}','BUY')">▲ LONG ${sym.replace('USDT','')}</button>
+      <button class="btn btn-r" style="font-size:15px;padding:14px" onclick="analyzeAndTrade('${sym}','SELL')">▼ SHORT ${sym.replace('USDT','')}</button>
+    </div>
+    ${extra||''}`;
+}
+
+async function searchAndAnalyze() {
+  let input = document.getElementById('searchInput').value.trim().toUpperCase();
+  if (!input) { toast('Enter a coin name'); return; }
+
+  // Auto-append USDT if not present
+  if (!input.endsWith('USDT')) input = input + 'USDT';
+
+  const resultDiv = document.getElementById('searchResult');
+  resultDiv.style.display = 'block';
+  resultDiv.innerHTML = '<div style="text-align:center;padding:20px;color:var(--dim)">⏳ Loading '+input+'…</div>';
+
+  // Fetch candles if we don't have them
+  if (!st.candles[input] || st.candles[input].length < 20) {
+    try {
+      // Try futures klines first, fallback to spot
+      let raw = null;
+      try {
+        const rf = await fetch('https://fapi.binance.com/fapi/v1/klines?symbol='+input+'&interval=5m&limit=500');
+        const rfd = await rf.json();
+        if (Array.isArray(rfd) && rfd.length > 10) raw = rfd;
+      } catch(_) {}
+      if (!raw) {
+        const rs = await fetch('https://api.binance.com/api/v3/klines?symbol='+input+'&interval=5m&limit=500');
+        const rsd = await rs.json();
+        if (Array.isArray(rsd) && rsd.length > 10) raw = rsd;
+      }
+      if (!raw || raw.length === 0) {
+        resultDiv.innerHTML = '<div style="padding:14px;color:var(--red)">❌ "'+input+'" not found on Binance Futures or Spot.<br><small style=\'color:var(--dim)\'>Some very new tokens may not be available. Try adding USDT manually e.g. PIPPINUSDT</small></div>';
+        return;
+      }
+      st.candles[input] = raw.map(k=>({open:+k[1],high:+k[2],low:+k[3],close:+k[4],vol:+k[5],closed:true}));
+      st.wsReady[input] = true;
+      // Also get live price via ticker
+      // Try futures price first, fallback to spot
+      try {
+        const tf = await fetch('https://fapi.binance.com/fapi/v1/ticker/24hr?symbol='+input);
+        const tfd = await tf.json();
+        if(tfd.lastPrice){ st.prices[input]=parseFloat(tfd.lastPrice); st.change24h[input]=parseFloat(tfd.priceChangePercent); }
+      } catch(_) {
+        const tr = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol='+input);
+        const td = await tr.json();
+        if(td.lastPrice){ st.prices[input]=parseFloat(td.lastPrice); st.change24h[input]=parseFloat(td.priceChangePercent); }
+      }
+      // Add to SYMBOLS if not present
+      if (!SYMBOLS.includes(input)) await addSymbolLive(input);
+    } catch(e) {
+      resultDiv.innerHTML = '<div style="padding:14px;color:var(--red)">❌ Error loading '+input+': '+e.message+'</div>';
+      return;
+    }
+  }
+
+  resultDiv.innerHTML = buildAnalysisHTML(input, '');
+  log('🔍 Analyzed: '+input,'ok');
+}
+
+async function analyzeAndTrade(sym, dir) {
+  const sizeEl = document.getElementById('tradeSize');
+  const size = sizeEl ? parseFloat(sizeEl.value)||st.cfg.size : st.cfg.size;
+  closeSheet();
+  // Hide search result panel after trade
+  const rd = document.getElementById('searchResult');
+  if (rd) rd.style.display='none';
+  await placeOrder(sym, dir, size);
+}
+
+function openSheet(sym) {
+  document.getElementById('sh-title').textContent = sym.replace('USDT','/USDT');
+  document.getElementById('sh-body').innerHTML = buildAnalysisHTML(sym, '');
+  document.getElementById('sheet').classList.add('show');
+}
+function closeSheet(){ document.getElementById('sheet').classList.remove('show'); }
+async function sheetOrder(sym,dir){ closeSheet(); await placeOrder(sym,dir,st.cfg.size); }
+
+async function manualOrder(dir) {
+  let sym = (document.getElementById('manSym').value||'').trim().toUpperCase();
+  if (!sym) { toast('Enter a symbol first'); return; }
+  if (!sym.endsWith('USDT')) sym = sym + 'USDT';
+  const size = parseFloat(document.getElementById('manSize').value)||st.cfg.size;
+  const manLevVal = parseInt(document.getElementById('manLev').value)||0;
+  // Load candles if needed for auto leverage
+  if (!st.candles[sym] || st.candles[sym].length < 20) {
+    log('⏳ Loading '+sym+' data for trade…','info');
+    try {
+      const r = await fetch('https://api.binance.com/api/v3/klines?symbol='+sym+'&interval=5m&limit=200');
+      const raw = await r.json();
+      if (Array.isArray(raw) && raw.length>0) {
+        st.candles[sym]=raw.map(k=>({open:+k[1],high:+k[2],low:+k[3],close:+k[4],vol:+k[5],closed:true}));
+        st.wsReady[sym]=true;
+        const tr=await fetch('https://api.binance.com/api/v3/ticker/price?symbol='+sym);
+        const td=await tr.json();
+        if(td.price) st.prices[sym]=parseFloat(td.price);
+      }
+    } catch(e){ log('Could not load '+sym+': '+e.message,'err'); }
+  }
+  const lev = manLevVal > 0 ? manLevVal : getDynamicLeverage(sym);
+  st.cfg.leverage = lev;
+  await placeOrder(sym, dir==='BUY'?'BUY':'SELL', size);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════════════════
+function setBanner(type, msg) {
+  const b=document.getElementById('connBanner'), d=document.getElementById('connDot'), t=document.getElementById('connText');
+  b.className=`banner bn-${type}`; t.textContent=msg;
+  d.className=`bn-dot ${type==='ok'?'pulse':''}`;
+}
+function saveConfig(){
+  st.cfg.strategy=document.getElementById('cfgStrat').value;
+  st.cfg.size=parseFloat(document.getElementById('cfgSize').value)||45;
+  st.cfg.leverage=parseInt(document.getElementById('cfgLev').value)||5;
+  st.cfg.tp=parseFloat(document.getElementById('cfgTP').value)||10;
+  st.cfg.sl=parseFloat(document.getElementById('cfgSL').value)||8;
+  st.cfg.maxTrades=parseInt(document.getElementById('cfgMaxT').value)||20;
+  st.cfg.maxOpen=parseInt(document.getElementById('cfgMaxP').value)||3;
+  toast('Config saved ✓');
+  if(st.connected) updateAPIStatus();
+}
+function togSet(k){ st.togs[k]=!st.togs[k]; document.getElementById('tog-'+k).classList.toggle('on',st.togs[k]); }
+function toggleEye(id, btn){ const i=document.getElementById(id); i.type=i.type==='password'?'text':'password'; btn.textContent=i.type==='password'?'👁':'🙈'; }
+
+function log(msg, type='info') {
+  const el=document.getElementById('logBox');
+  if (!el) return;
+  const t=new Date().toLocaleTimeString('en',{hour12:false});
+  const d=document.createElement('div'); d.className=`ll ${type}`;
+  d.innerHTML=`<span class="lt">${t}</span>${msg}`;
+  el.appendChild(d); el.scrollTop=el.scrollHeight;
+  if(el.children.length>400) el.removeChild(el.firstChild);
+}
+
+function clearHistory(){
+  st.allTrades = st.allTrades.filter(t => t.status === 'OPEN');
+  st.wins=0; st.losses=0; st.totalPnl=0; st.todayPnl=0; st.todayLoss=0;
+  st.pnlHistory = [0];
+  // Only reset liveOpenPnl if there are no open positions
+  if (!st.openPos.length) st.liveOpenPnl = 0;
+  saveState();
+  renderTrades(); updateDash(); drawPnlChart();
+  toast('Closed trades cleared ✓');
+}
+
+function resetEverything() {
+  if (!confirm('⚠️ FULL RESET\n\nThis will:\n• Clear ALL trades (open + closed)\n• Reset all stats to zero\n• Clear localStorage\n\nMake sure Binance is also reset first.\n\nContinue?')) return;
+  // Stop bot if running
+  if (st.running) stopBot();
+  // Clear all state
+  st.openPos      = [];
+  st.allTrades    = [];
+  st.wins         = 0;
+  st.losses       = 0;
+  st.totalPnl     = 0;
+  st.todayPnl     = 0;
+  st.todayLoss    = 0;
+  st.tradeCount   = 0;
+  st.pnlHistory   = [0];
+  st.liveOpenPnl  = null;
+  st.liveBalance  = null;
+  st.liveEquity   = null;
+  st.startBalance = null; // will re-capture on next fetchBalance
+  st.capital      = 2000;
+  st.tickStep     = 0;
+  if (st.pendingOrder) st.pendingOrder.clear();
+  closingGuard.clear();
+  // Wipe localStorage completely
+  localStorage.removeItem('demoTrades');
+  localStorage.removeItem('demoOpenPos');
+  localStorage.removeItem('demoStats');
+  localStorage.removeItem('blockedSyms');
+  // Re-render everything
+  renderOpenPos();
+  renderTrades();
+  updateDash();
+  drawPnlChart();
+  log('🔄 Full reset complete — starting fresh!', 'ok');
+  toast('✅ Bot reset — fresh start!');
+}
+function setText(id,v){ const e=document.getElementById(id);if(e)e.textContent=v; }
+function shuffle(a){ return [...a].sort(()=>Math.random()-.5); }
+function fmt(n){ if(!n&&n!==0)return'—';if(n>=10000)return n.toFixed(1);if(n>=100)return n.toFixed(2);if(n>=1)return n.toFixed(3);if(n>=0.1)return n.toFixed(4);return n.toFixed(6); }
+function toast(msg){ const el=document.createElement('div');el.className='toast';el.textContent=msg;document.body.appendChild(el);setTimeout(()=>el.style.opacity='0',1800);setTimeout(()=>el.remove(),2100); }
+
+function copyLog() {
+  const el = document.getElementById('logBox');
+  if (!el) return;
+  const text = Array.from(el.children).map(c=>c.textContent).join('\n');
+  navigator.clipboard.writeText(text).then(()=>toast('Log copied! ✓')).catch(()=>{
+    // Fallback for mobile
+    const ta=document.createElement('textarea');
+    ta.value=text; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy');
+    ta.remove(); toast('Log copied! ✓');
+  });
+}
+
+async function forceScan() {
+  if (!st.connected){ toast('Connect API keys first'); nav('keys'); return; }
+  log('▶ Manual scan triggered…','info');
+  await botLoop();
+}
+
+function nav(page) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('pg-'+page).classList.add('active');
+  ['dash','scanner','trades','config','setup'].forEach((p,i)=>{
+    if(p===page) document.querySelectorAll('.tab')[i].classList.add('active');
+  });
+  if(page==='trades') renderTrades();
+  if(page==='scanner') { runScan(); }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════
+// ── WAKE LOCK — prevent screen/device sleep ──
+let wakeLock = null;
+async function requestWakeLock() {
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => {
+        log('⚠️ Screen wake lock released — re-acquiring…','warn');
+        setTimeout(requestWakeLock, 2000);
+      });
+      log('🔒 Screen wake lock active — bot will not sleep','ok');
+    }
+  } catch(e) { /* wake lock not supported — use visibility fallback */ }
+}
+
+// ── VISIBILITY CHANGE — resume bot when tab comes back ──
+let tabHiddenAt = 0;
+const OFFLINE_CLOSE_THRESHOLD = 5 * 60 * 1000; // 5 minutes
+
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'visible') {
+    const offlineMs = tabHiddenAt ? Date.now() - tabHiddenAt : 0;
+    tabHiddenAt = 0;
+    if (st.running && st.connected) {
+      log('👁 Tab visible — resuming sync…','info');
+      await syncPositionsFromBinance();
+      await fetchBalance();
+      renderOpenPos(); updateDash();
+      await requestWakeLock();
+      // If offline >5 min AND has unprotected open positions → emergency close
+      if (offlineMs > OFFLINE_CLOSE_THRESHOLD && st.openPos.length > 0) {
+        const unprotected = st.openPos.filter(t => !t.nativeTP);
+        if (unprotected.length > 0) {
+          log('🚨 Tab was offline '+Math.round(offlineMs/60000)+'m with '+unprotected.length+' unprotected positions — closing all for safety','err');
+          toast('⚠️ Closing '+unprotected.length+' unprotected positions after '+Math.round(offlineMs/60000)+'m offline');
+          for (const t of [...unprotected]) {
+            await closePosition(t);
+            await new Promise(r => setTimeout(r, 300));
+          }
+        }
+      }
+    }
+  } else {
+    tabHiddenAt = Date.now();
+    if (st.running && st.openPos.length > 0) {
+      const hasProtected = st.openPos.filter(t=>t.nativeTP).length;
+      const unprotected  = st.openPos.filter(t=>!t.nativeTP).length;
+      log('⚠️ Tab hidden — '+hasProtected+' positions have TP on Binance, '+unprotected+' local only. Return within 5 min.','warn');
+    }
+  }
+});
+
+// ── WEB WORKER HEARTBEAT — keeps JS alive in background tabs ──
+// Inline worker using blob URL — no external file needed
+function startHeartbeatWorker() {
+  const workerCode = `
+    let interval = null;
+    self.onmessage = function(e) {
+      if (e.data === 'start') {
+        interval = setInterval(() => self.postMessage('ping'), 10000);
+      } else if (e.data === 'stop') {
+        clearInterval(interval);
+      }
+    };
+  `;
+  try {
+    const blob = new Blob([workerCode], { type: 'application/javascript' });
+    const worker = new Worker(URL.createObjectURL(blob));
+    worker.onmessage = async (e) => {
+      if (e.data === 'ping' && st.running && st.connected) {
+        // Heartbeat — ensure bot intervals are still firing
+        if (!st.loopInterval) {
+          log('💓 Heartbeat: restarting bot loop…','warn');
+          st.loopInterval = setInterval(botLoop, 15_000);
+        }
+      }
+    };
+    worker.postMessage('start');
+    log('💓 Background heartbeat worker active','ok');
+    return worker;
+  } catch(e) { return null; }
+}
+
+// ── PAGE UNLOAD WARNING ──
+window.addEventListener('beforeunload', (e) => {
+  if (st.running && st.openPos.length > 0) {
+    e.preventDefault();
+    e.returnValue = 'Bot is running with '+st.openPos.length+' open positions! Native SL/TP on Binance will still work, but new signals will stop.';
+    return e.returnValue;
+  }
+});
+
+window.addEventListener('load', () => {
+  loadState();
+  setTimeout(() => runScan(), 100);
+
+  const k=localStorage.getItem('demoKey'), s=localStorage.getItem('demoSecret'), px=localStorage.getItem('demoProxy');
+  if(px) activeProxy=px;
+  if(k && s) {
+    document.getElementById('apiKey').value    = k;
+    document.getElementById('apiSecret').value = s;
+    log('🔑 Saved keys found — auto-reconnecting…','warn');
+    setTimeout(()=>{ document.getElementById('connectBtn').click(); }, 1500);
+  }
+
+  updateDash(); renderOpenPos(); renderTrades(); drawPnlChart();
+  document.getElementById('sheet').addEventListener('click',e=>{ if(e.target===document.getElementById('sheet')) closeSheet(); });
+  window.addEventListener('resize', drawPnlChart);
+  setInterval(()=>{ renderOpenPos(); updateDash(); }, 5000);
+
+  // Start background keepalive
+  startHeartbeatWorker();
+  requestWakeLock();
+  startChange24hPolling(); // refresh 24h % every 5 min
+
+  log('◈ Binance Demo Bot ready.','ok');
+  log('👉 Go to the Keys tab → paste your demo-fapi API keys → tap Connect','info');
+  log('💡 Tip: Keep the browser tab open for live signals. Native SL/TP on Binance work even when offline.','info');
+});
+</script>
+</body>
+</html>
